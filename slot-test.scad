@@ -3,21 +3,20 @@ use <scad-utils/transformations.scad>
 
 
 /******** Model params *********/
-MODEL_FILE = "/Users/matt/Dropbox/art/Coffee table/attempt3-lines.stl";
-MODEL_BOUNDS_MIN = [-10, -10, -10];
-MODEL_BOUNDS_MAX = [10, 10, 10];
+MODEL_FILE = "/Users/matt/Dropbox/art/Coffee table/attempt3-lines2.stl";
+MODEL_DIMENSIONS = [48, 24, 18];   // Resize the model to a bounding box of this size
 
 
 /******** Slicing params *******/
 THICKNESS = 0.25;       // Material thickness
 
 NORMAL_A = [0, 1, 0];       // Normal vector for the 'A' cross section plane
-//SLICES_A = [-3, -1, 0, 2, 3];   // Distance from origin along NORMAL_A to 
-SLICES_A = [0];
+SLICES_A = [-3, -1, 0, 2, 3];   // Distance from origin along NORMAL_A to 
+//SLICES_A = [8, 10];
                             //create cross sections
 NORMAL_B = [-1, 0, 0];
-//SLICES_B = [-3, -1];
-SLICES_B = [];
+SLICES_B = [-3, -1];
+
 
 //$fa = 4;
 //$fs = 0.1;
@@ -36,19 +35,19 @@ MODE = 0;
 
 if (MODE == 0) {
     assemble_model();
+//    bisect(NORMAL_A, 0);
+    %model();
 } else {
     layout_model();
 }
 
 
 module assemble_model() {
-    //for (dist = SLICES_A) {
-    //    bisect(NORMAL_A, dist);
-    //}
+    for (dist = SLICES_A) {
+        bisect(NORMAL_A, dist);
+    }
     
-    //for (distb = SLICES_B) bisect(NORMAL_B, distb);
-    
-    model();     // Show "disabled" ghost of full model
+    for (distb = SLICES_B) bisect(NORMAL_B, distb);
 }
 
 module layout_model() {
@@ -60,7 +59,7 @@ module layout_model() {
 /*** Lower level functions and modules below here ***/
 
 module model() {
-    import(MODEL_FILE, convexity=10);
+    resize(MODEL_DIMENSIONS) import(MODEL_FILE, convexity=10);
 }
 
 
@@ -69,7 +68,7 @@ module bisect(normal = [0, 0, 1], d = 0) {
     ang = acos(dot(normal, [0, 0, 1]) / norm(normal));
     xvec = ang == 0 ? [0, 0, 1] : xvec_calc;
     
-    echo("Bisect dist: ", d);
+    echo("xvec: ", xvec, "Ang: ", ang);
     rotate(a=-ang, v=xvec)
       translate([0, 0, d])
         linear_extrude(height=THICKNESS, center=true) 
@@ -77,7 +76,7 @@ module bisect(normal = [0, 0, 1], d = 0) {
             translate([0, 0, -d]) 
               rotate(a=ang, v=xvec) 
                 model();
-    
+
 }
 
 
