@@ -70,22 +70,13 @@ model_shape = Part.Shape()    # Make an empty shape to put the mesh into
 model_shape.makeShapeFromMesh(model_mesh.Topology, 0.001)  # Tolerance hardcoded for now
 
 
-# Cut cross-section
-# slice accepts two arguments:
-#+ the normal of the cross section plane
-#+ the distance from the origin to the cross section plane. 
-# returns a list of wires
-
 facesA = []
 
 for d in SLICES_A:
     slice_wires = model_shape.slice(slice_a_vec, d)
     for wire in slice_wires:
-        facesA.append(Part.Face(wire))
-
-#slice = doc.addObject("Part::Feature","A_Wires")
-#slice.Shape = Part.Compound(wiresA)
-
+        face = Part.Face(wire)
+        facesA.append(face)
 
 facesB = []
 
@@ -124,7 +115,7 @@ def getSliceEdges(face, face_normal, slice_normal, slice_distance):
 
 def sliceFromEdge(edge, thickness, slice_normal):
     extrusion = edge.extrude(slice_normal * thickness)
-    extrusion.translate(slice_normal * -thickness/2)    # Center the face on the edge
+    extrusion.translate(slice_normal * (-thickness/2))    # Center the face on the edge
     return extrusion
 
 def isParallelAngle(rads):
@@ -152,12 +143,37 @@ def cutHalf(edge, up_dir, top=True):
     else:
         return Part.Edge(midpoint, p1)
 
+def cut_face(face, face_normal, slice_normal, slice_distances, cut_top=True):
+    intersection_dir = face_normal.cross(slice_normal)
+    cut_edges = []
+    for dist in slice_distances:
+        cut_edges.extend(getSliceEdges(face, face_normal, 
+                                       slice_normal, dist))
 
-face = facesB[8]
-Part.show(face)
-edges = getSliceEdges(face, slice_b_vec, slice_a_vec, 30)
-for edge in edges:
-    Part.show(cutHalf(edge, ab_intersection, False))
+    cut_shape = face
+    for edge in cut_edges:
+        line = cutHalf(edge, intersection_dir, cut_top)
+        cutout = sliceFromEdge(line, THICKNESS, slice_normal)
+        cut_shape = cut_shape.cut(cutout)
+    return cut_shape
+
+
+for face in facesA:
+    out = cut_face(face, slice_a_vec, slice_b_vec, SLICES_B)
+    Part.show(out)
+
+for face in facesB:
+    out = cut_face(face, slice_b_vec, slice_a_vec, SLICES_A)
+    Part.show(out)
+
+#face = facesB[8]
+#Part.show(face)
+#edges = getSliceEdges(face, slice_b_vec, slice_a_vec, 30)
+#for edge in edges:
+#    line = cutHalf(edge, ab_intersection, False)
+#    cutout = sliceFromEdge(line, THICKNESS, slice_a_vec)
+#    cut_shape = cut_shape.cut(cutout)
+#    Part.show(cutHalf(edge, ab_intersection, False))
 
 
 
