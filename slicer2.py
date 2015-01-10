@@ -1,39 +1,12 @@
+import sys
+sys.path.append('/Users/matt/venv/cad/lib/python2.7/site-packages')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import FreeCAD
 import math
 import Mesh
 import Part
-from FreeCAD import Base
+from FreeCAD import Base, Vector
+
 
 MODEL = "/Users/matt/Dropbox/art/Coffee table/attempt3-lines2.stl"
 MODEL_DIMS = [48, 24, 20]
@@ -58,7 +31,7 @@ model_mesh.translate(-box.XMin, -box.YMin, -box.ZMin)
 
 box = model_mesh.BoundBox
 scale_matrix = FreeCAD.Matrix()
-scale_matrix.scale(MODEL_DIMS[0] / box.XMax, 
+scale_matrix.scale(MODEL_DIMS[0] / box.XMax,
                    MODEL_DIMS[1] / box.YMax,
                    MODEL_DIMS[2] / box.ZMax)
 print scale_matrix
@@ -88,25 +61,21 @@ for d in SLICES_B:
 print("Created {} A faces and {} B faces".format(len(facesA), len(facesB)))
 
 
-
 def getSliceEdges(face, face_normal, slice_normal, slice_distance):
     norm = FreeCAD.Vector(0, 0, 1)
     dist_vec = slice_normal * slice_distance
     box = Part.makeBox(100, 100, 1e-6,
-                        FreeCAD.Vector(-50, -50, 0))
+                       FreeCAD.Vector(-50, -50, 0))
     place = FreeCAD.Placement(dist_vec, FreeCAD.Rotation(norm, slice_normal))
     box.transformShape(place.toMatrix())
     overlap = face.common(box)
-    
+
     slice_dir = face_normal.cross(slice_normal)
     slices = []
-    print("Intersection has {} faces".format(len(overlap.Faces)))
     for overlap_face in overlap.Faces:
-        print("Face has {} edges".format(len(overlap_face.Edges)))
         for edge in overlap_face.Edges:
             dir = edgeToVector(edge)
             angle = dir.getAngle(ab_intersection)
-            print("Angle from desired: "+str(angle))
             if isParallelAngle(angle):
                 slices.append(edge)
                 break
@@ -126,20 +95,20 @@ def isParallelAngle(rads):
 def edgeToVector(edge):
     (pt0, pt1) = edge.Vertexes
 
-    return FreeCAD.Vector(pt1.X - pt0.X, 
-                          pt1.Y - pt0.Y, 
+    return FreeCAD.Vector(pt1.X - pt0.X,
+                          pt1.Y - pt0.Y,
                           pt1.Z - pt0.Z)
 
 def cutHalf(edge, up_dir, top=True):
     """Return a collinear edge that's half as long as the input.
     if top=True, return the top half. else, the bottom half."""
     (p0, p1) = edge.Vertexes
-    midpoint = Part.Vertex((p1.X + p0.X)/2, 
+    midpoint = Part.Vertex((p1.X + p0.X)/2,
                            (p1.Y + p0.Y)/2,
                            (p1.Z + p0.Z)/2)
     top_first = edgeToVector(edge).dot(up_dir) < 0
-    if top_first == top:    
-        return Part.Edge(p0, midpoint) 
+    if top_first == top:
+        return Part.Edge(p0, midpoint)
     else:
         return Part.Edge(midpoint, p1)
 
@@ -147,7 +116,7 @@ def cut_face(face, face_normal, slice_normal, slice_distances, cut_top=True):
     intersection_dir = face_normal.cross(slice_normal)
     cut_edges = []
     for dist in slice_distances:
-        cut_edges.extend(getSliceEdges(face, face_normal, 
+        cut_edges.extend(getSliceEdges(face, face_normal,
                                        slice_normal, dist))
 
     cut_shape = face
@@ -157,6 +126,10 @@ def cut_face(face, face_normal, slice_normal, slice_distances, cut_top=True):
         cut_shape = cut_shape.cut(cutout)
     return cut_shape
 
+def outline_face(face, face_normal):
+    norm = FreeCAD.Vector(0, 0, 1)
+    place = FreeCAD.Placement(FreeCAD.Vector(0,0,0), 
+                              FreeCAD.Rotation(norm, slice_normal))
 
 for face in facesA:
     out = cut_face(face, slice_a_vec, slice_b_vec, SLICES_B)
