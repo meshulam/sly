@@ -2,7 +2,8 @@
 #
 import numpy
 from mathutils import Vector, Matrix, Quaternion
-from shapely.geometry import Point as Point2D, Polygon
+from shapely.geometry import Point as Point2D, Polygon, LinearRing
+import shapely.geometry.polygon
 
 
 Z_UNIT = Vector((0, 0, 1))
@@ -31,11 +32,17 @@ class Slice(object):
 
         print("Z min: {}, mean: {}, max: {}".format(min_z, mean_z, max_z))
         xform = rot.conjugated().to_matrix().to_4x4()
-        xform.translation = Vector(0, 0, mean_z)
+        xform.translation = Vector((0, 0, mean_z))
         # TODO: check for polygons that don't lie on the given normal
         poly = Polygon(points_2d)
+        poly = shapely.geometry.polygon.orient(poly)
         return Slice(xform, poly)
 
+
+def outline_polygon(poly, dist):
+    border = LinearRing(poly.boundary)
+    inner = Polygon(border.parallel_offset(dist, 'left'))
+    return poly.difference(inner)
 
 # In shapely:
 # face.boundary, make sure oriented ccw,
