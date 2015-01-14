@@ -1,10 +1,12 @@
 # Slicer: Classes for 3D construction from 2D parts
 #
+import IPython
 import numpy
+import bmesh
 from mathutils import Vector, Matrix, Quaternion
 from shapely.geometry import Point as Point2D, Polygon, LinearRing
 import shapely.geometry.polygon
-
+import shapely.ops
 
 Z_UNIT = Vector((0, 0, 1))
 
@@ -37,6 +39,13 @@ class Slice(object):
         poly = Polygon(points_2d)
         poly = shapely.geometry.polygon.orient(poly)
         return Slice(xform, poly)
+
+    def to_mesh(self):
+        """returns a bmesh object corresponding to this slice in 3-space"""
+        tris = shapely.ops.triangulate(self.polygon)
+        bm = bmesh.new()
+        IPython.embed()
+
 
 
 def outline_polygon(poly, dist):

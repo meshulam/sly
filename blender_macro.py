@@ -45,7 +45,8 @@ def bisect_to_slices(obj, origin, normal):
 
     points = [mesh.vertices[ind].co for ind in mesh.polygons[0].vertices]
     sli = Slice.from_3d_points(points, normal)
-    IPython.embed()
+    sli.to_mesh()
+    #IPython.embed()
 
 def add_slice_to_scene(slice):
     # TODO: this one
