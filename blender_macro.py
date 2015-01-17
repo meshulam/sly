@@ -8,12 +8,14 @@ module_path = '/Users/matt/Dropbox/art/slots'
 if module_path not in sys.path:
     sys.path.append(module_path)
 
+from importlib import reload
 import IPython
 import bpy
 import bmesh
 import mathutils
-from slicer import Slice
+import slicer
 
+reload(slicer)
 #IPython.embed()
 
 
@@ -44,13 +46,16 @@ def bisect_to_slices(obj, origin, normal):
     mesh = selected().data
 
     points = [mesh.vertices[ind].co for ind in mesh.polygons[0].vertices]
-    sli = Slice.from_3d_points(points, normal)
-    sli.to_mesh()
-    #IPython.embed()
+    sli = slicer.Slice.from_3d_points(points, normal)
+    return sli
 
 def add_slice_to_scene(slice):
     # TODO: this one
     pass
 
 blender_object = selected()
-bisect_to_slices(blender_object, origin, normal)
+sli = bisect_to_slices(blender_object, origin, normal)
+bm = sli.to_mesh()
+bpy.ops.object.add(type='MESH')
+new_mesh = bpy.data.meshes.get('Mesh')  # TODO: specify name?
+IPython.embed()

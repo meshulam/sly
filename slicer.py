@@ -44,8 +44,18 @@ class Slice(object):
         """returns a bmesh object corresponding to this slice in 3-space"""
         tris = shapely.ops.triangulate(self.polygon)
         bm = bmesh.new()
-        IPython.embed()
-
+        vertex_cache = {}
+        for tri in tris:
+            bound = tri.exterior
+            face_verts = []
+            for coord in bound.coords:
+                vertex = vertex_cache.setdefault(coord,
+                            bm.verts.new((coord[0], coord[1], 0.0)))
+                if vertex not in face_verts:
+                    face_verts.append(vertex)
+            bm.faces.new(face_verts)
+        bm.transform(self.transformation)
+        return bm
 
 
 def outline_polygon(poly, dist):
