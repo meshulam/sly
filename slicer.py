@@ -4,9 +4,7 @@ import IPython
 import numpy
 import bmesh
 from mathutils import Vector, Matrix, Quaternion
-from shapely.geometry import Point as Point2D, Polygon, LinearRing
-import shapely.geometry.polygon
-import shapely.ops
+import Polygon
 
 Z_UNIT = Vector((0, 0, 1))
 
@@ -25,6 +23,7 @@ class Slice(object):
 
         for vector in points:
             (x, y, z) = rotated(vector, rot)
+            print("Transformed {} to {}".format(vector, (x, y, z)))
             points_2d.append((x, y))
             zs.append(z)
 
@@ -35,37 +34,49 @@ class Slice(object):
         print("Z min: {}, mean: {}, max: {}".format(min_z, mean_z, max_z))
         xform = rot.conjugated().to_matrix().to_4x4()
         xform.translation = Vector((0, 0, mean_z))
+        print("Normal:", normal)
+        print("Matrix:", xform)
         # TODO: check for polygons that don't lie on the given normal
-        poly = Polygon(points_2d)
-        poly = shapely.geometry.polygon.orient(poly)
+        poly = Polygon.Polygon(points_2d)
         return Slice(xform, poly)
 
     def to_mesh(self):
         """returns a bmesh object corresponding to this slice in 3-space"""
-        tris = shapely.ops.triangulate(self.polygon)
+        strips = self.polygon.triStrip()
         bm = bmesh.new()
         vertex_cache = {}
-        for tri in tris:
-            bound = tri.exterior
-            face_verts = []
-            for coord in bound.coords:
-                vertex = vertex_cache.setdefault(coord,
-                            bm.verts.new((coord[0], coord[1], 0.0)))
-                if vertex not in face_verts:
+        for strip in strips:
+            for tri in tristrip_to_tris(strip):
+                face_verts = []
+                for point in tri:
+                    vertex = vertex_cache.setdefault(point,
+                                bm.verts.new((point[0], point[1], 0.0)))
                     face_verts.append(vertex)
-            bm.faces.new(face_verts)
+                face = bm.faces.new(face_verts)
+                if not is_positive(face.normal):
+                    face.normal_flip()
         bm.transform(self.transformation)
         return bm
 
+def is_positive(vector):
+    """For any two nonzero vectors X and -X, guaranteed to return true for
+    exactly one of them"""
+    for elem in vector:
+        if elem > 0:
+            return True
+        elif elem < 0:
+            return False
+    return False  # Only gets here for zero vectors
+
+def tristrip_to_tris(points):
+    for i in range(len(points) - 2):
+        yield points[i:i + 3]
 
 def outline_polygon(poly, dist):
-    border = LinearRing(poly.boundary)
-    inner = Polygon(border.parallel_offset(dist, 'left'))
-    return poly.difference(inner)
-
-# In shapely:
-# face.boundary, make sure oriented ccw,
-# parallel_offset left for inner, right for outer
+    #border = LinearRing(poly.boundary)
+    #inner = Polygon(border.parallel_offset(dist, 'left'))
+    #return poly.difference(inner)
+    pass
 
 
 def rotated(vector, rot):
