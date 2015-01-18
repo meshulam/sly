@@ -23,7 +23,6 @@ class Slice(object):
 
         for vector in points:
             (x, y, z) = rotated(vector, rot)
-            print("Transformed {} to {}".format(vector, (x, y, z)))
             points_2d.append((x, y))
             zs.append(z)
 
@@ -33,10 +32,7 @@ class Slice(object):
 
         print("Z min: {}, mean: {}, max: {}".format(min_z, mean_z, max_z))
         xform = rot.conjugated().to_matrix().to_4x4()
-        xform.translation = Vector((0, 0, mean_z))
-        print("Normal:", normal)
-        print("Matrix:", xform)
-        # TODO: check for polygons that don't lie on the given normal
+        xform.translation = norm * mean_z
         poly = Polygon.Polygon(points_2d)
         return Slice(xform, poly)
 
@@ -73,9 +69,6 @@ def tristrip_to_tris(points):
         yield points[i:i + 3]
 
 def outline_polygon(poly, dist):
-    #border = LinearRing(poly.boundary)
-    #inner = Polygon(border.parallel_offset(dist, 'left'))
-    #return poly.difference(inner)
     pass
 
 

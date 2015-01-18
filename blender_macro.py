@@ -17,29 +17,30 @@ import slicer
 
 reload(slicer)
 
-origin = mathutils.Vector((0, 0, 0))
-normal = mathutils.Vector((0.23537658154964447, 0.044095613062381744, 0.9709033370018005))
+origin = mathutils.Vector((4, 0, 0))
+#normal = mathutils.Vector((0.23537658154964447, 0.044095613062381744, 0.9709033370018005))
+normal = mathutils.Vector((1, 0, 0))
 
 
 def selected():
     return bpy.context.selected_objects[0]
 
 def bisect_to_slices(obj, origin, normal):
-    bpy.ops.object.duplicate(linked=False)
-    #dupe = bpy.context.selected_objects[0]
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.bisect(plane_co=origin, plane_no=normal,
-                        clear_inner=True, clear_outer=True)
-    bpy.ops.mesh.edge_face_add()
-    bpy.ops.object.mode_set(mode='OBJECT')
-    # now can access obj.data.polygons
-    mesh = selected().data
+    scene = bpy.context.scene
+    bm = bmesh.new()
+    bm.from_object(obj, scene)
+    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    ret = bmesh.ops.bisect_plane(bm, geom=geom,
+                                 dist=0.0001,
+                                 plane_co=origin, plane_no=normal,
+                                 use_snap_center=False,
+                                 clear_outer=True, clear_inner=True)
+    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    ret2 = bmesh.ops.contextual_create(bm, geom=geom)
     slices = []
-    for poly in mesh.polygons:
-        points = [mesh.vertices[ind].co for ind in poly.vertices]
+    for face in ret2['faces']:
+        points = [vert.co for vert in face.verts]
         slices.append(slicer.Slice.from_3d_points(points, normal))
-
     return slices
 
 def add_bmesh_to_scene(bm):
