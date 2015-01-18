@@ -10,9 +10,43 @@ Z_UNIT = Vector((0, 0, 1))
 
 class Slice(object):
 
-    def __init__(self, mat, poly=None):
+    def __init__(self, mat, norm, poly=None, thickness=0.5):
+        if thickness <= 0:
+            raise ValueError("Slice thickness must be positive!")
+
         self.transformation = mat
         self.polygon = poly
+        self.thickness = thickness
+        self._mesh = None
+
+    def intersect(self, other, invert_cuts=False):
+        """Cut slots into this slice and another one so they fit together."""
+        pass
+
+    def to_mesh(self):
+        """returns a bmesh object corresponding to this slice in 3-space"""
+        strips = self.polygon.triStrip()
+        bm = bmesh.new()
+        vertex_cache = {}
+        for strip in strips:
+            for tri in tristrip_to_tris(strip):
+                face_verts = []
+                for point in tri:
+                    vertex = vertex_cache.setdefault(point,
+                                bm.verts.new((point[0], point[1], 0.0)))
+                    face_verts.append(vertex)
+                face = bm.faces.new(face_verts)
+                if not is_positive(face.normal):
+                    face.normal_flip()
+        bm.transform(self.transformation)
+        self._mesh = bm
+        return bm
+
+    def normal(self):
+        return rotated(Z_UNIT, self.transformation)
+
+    def coord(self):
+        return self.transformation.translation
 
     @staticmethod
     def from_3d_points(points, normal):
@@ -36,23 +70,6 @@ class Slice(object):
         poly = Polygon.Polygon(points_2d)
         return Slice(xform, poly)
 
-    def to_mesh(self):
-        """returns a bmesh object corresponding to this slice in 3-space"""
-        strips = self.polygon.triStrip()
-        bm = bmesh.new()
-        vertex_cache = {}
-        for strip in strips:
-            for tri in tristrip_to_tris(strip):
-                face_verts = []
-                for point in tri:
-                    vertex = vertex_cache.setdefault(point,
-                                bm.verts.new((point[0], point[1], 0.0)))
-                    face_verts.append(vertex)
-                face = bm.faces.new(face_verts)
-                if not is_positive(face.normal):
-                    face.normal_flip()
-        bm.transform(self.transformation)
-        return bm
 
 def is_positive(vector):
     """For any two nonzero vectors X and -X, guaranteed to return true for
