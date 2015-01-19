@@ -13,19 +13,21 @@ import IPython
 import bpy
 import bmesh
 import mathutils
+from mathutils import Vector
 import slicer
 
 reload(slicer)
 
-origin = mathutils.Vector((4, 0, 0))
+s1 = (Vector((3, 0, 0)), Vector((1, 0, 0)))
+s2 = (Vector((0, 1, 0)), Vector((0, 1, 0)))
+
 #normal = mathutils.Vector((0.23537658154964447, 0.044095613062381744, 0.9709033370018005))
-normal = mathutils.Vector((1, 0, 0))
 
 
 def selected():
     return bpy.context.selected_objects[0]
 
-def bisect_to_slices(obj, origin, normal):
+def bisect_to_slice(obj, origin, normal):
     scene = bpy.context.scene
     bm = bmesh.new()
     bm.from_object(obj, scene)
@@ -37,16 +39,12 @@ def bisect_to_slices(obj, origin, normal):
                                  clear_outer=True, clear_inner=True)
     geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
     ret2 = bmesh.ops.contextual_create(bm, geom=geom)
-    slices = []
-    for face in ret2['faces']:
-        points = [vert.co for vert in face.verts]
-        slices.append(slicer.Slice.from_3d_points(points, normal))
-    return slices
+    return slicer.Slice(origin, normal, bm)
 
-def add_bmesh_to_scene(bm):
-    mesh = bpy.data.meshes.new("newmesh")
+def add_bmesh_to_scene(bm, name="mesh"):
+    mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
-    ob = bpy.data.objects.new("meshObj", mesh)
+    ob = bpy.data.objects.new(name, mesh)
     scene = bpy.context.scene
     scene.objects.link(ob)
     scene.objects.active = ob
@@ -54,9 +52,37 @@ def add_bmesh_to_scene(bm):
     mesh.update()
 
 blender_object = selected()
-slices = bisect_to_slices(blender_object, origin, normal)
-for sli in slices:
-    bm = sli.to_mesh()
-    add_bmesh_to_scene(bm)
+sli = bisect_to_slice(blender_object, s1[0], s1[1])
+sli2 = bisect_to_slice(blender_object, s2[0], s2[1])
+
+front_edges = sli.bisect(sli2.front_coord(), sli2.normal)
+back_edges = sli.bisect(sli2.back_coord(), sli2.normal)
+
+cross = sli.normal.cross(sli2.normal)
+
+faces = []
+for face in sli.mesh.faces:
+    pt = face.calc_center_bounds()
+    if slicer.between_parallel_planes(pt, sli2.front_coord(),
+                                      sli2.back_coord(), sli2.normal):
+        faces.append(face)
+
+for face in faces:
+    pt = face.calc_center_bounds()
+    geom = face.verts[:] + face.edges[:] + [face]
+    ret = bmesh.ops.bisect_plane(sli.mesh, geom=geom,
+                                 plane_co=pt, plane_no=cross)
+    for elem in ret['geom']:
+        if not isinstance(elem, bmesh.types.BMFace):
+            continue
+        dist = mathutils.geometry.distance_point_to_plane(
+                    elem.calc_center_bounds(), pt, cross)
+        if dist > 0:
+            IPython.embed()
+
+#IPython.embed()
+
+add_bmesh_to_scene(sli.mesh, "slice1")
+#add_bmesh_to_scene(sli2.mesh, "slice2")
 
 #IPython.embed()
