@@ -18,16 +18,21 @@ import slicer
 
 reload(slicer)
 
-s1 = (Vector((3, 0, 0)), Vector((1, 0, 0)))
-s2 = (Vector((0, 1, 0)), Vector((0, 1, 0)))
-
-#normal = mathutils.Vector((0.23537658154964447, 0.044095613062381744, 0.9709033370018005))
+a_dir = Vector((1, 0, 0))
+a_pts = [Vector((3, 0, 0)),
+         Vector((0, 0, 0)),
+         Vector((8, 0, 0)),
+         Vector((-5, 0, 0))]
+b_dir = Vector((0, 1, 0))
+b_pts = [Vector((0, -3, 0)),
+         Vector((0, 0, 0)),
+         Vector((0, 3, 0))]
 
 
 def selected():
     return bpy.context.selected_objects[0]
 
-def bisect_to_slice(obj, origin, normal):
+def bisect_to_slice(obj, origin, normal, thickness):
     scene = bpy.context.scene
     bm = bmesh.new()
     bm.from_object(obj, scene)
@@ -39,7 +44,7 @@ def bisect_to_slice(obj, origin, normal):
                                  clear_outer=True, clear_inner=True)
     geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
     ret2 = bmesh.ops.contextual_create(bm, geom=geom)
-    return slicer.Slice(origin, normal, bm)
+    return slicer.Slice(origin, normal, bm, thickness=thickness)
 
 def add_bmesh_to_scene(bm, name="mesh"):
     mesh = bpy.data.meshes.new(name)
@@ -52,13 +57,20 @@ def add_bmesh_to_scene(bm, name="mesh"):
     mesh.update()
 
 blender_object = selected()
-sli = bisect_to_slice(blender_object, s1[0], s1[1])
-sli2 = bisect_to_slice(blender_object, s2[0], s2[1])
+a_slices = []
+b_slices = []
 
-sli.intersect(sli2, invert_cuts=False)
+for a_pt in a_pts:
+    a_slices.append(bisect_to_slice(blender_object, a_pt, a_dir, 0.25))
+
+for b_pt in b_pts:
+    b_slices.append(bisect_to_slice(blender_object, b_pt, b_dir, 0.25))
+
+for asli in a_slices:
+    for bsli in b_slices:
+        asli.intersect(bsli)
+
+for sli in a_slices + b_slices:
+    add_bmesh_to_scene(sli.solid_mesh())
 #IPython.embed()
 
-add_bmesh_to_scene(sli.solid_mesh(), "slice1")
-add_bmesh_to_scene(sli2.solid_mesh(), "slice2")
-
-#IPython.embed()
