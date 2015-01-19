@@ -55,34 +55,10 @@ blender_object = selected()
 sli = bisect_to_slice(blender_object, s1[0], s1[1])
 sli2 = bisect_to_slice(blender_object, s2[0], s2[1])
 
-front_edges = sli.bisect(sli2.front_coord(), sli2.normal)
-back_edges = sli.bisect(sli2.back_coord(), sli2.normal)
-
-cross = sli.normal.cross(sli2.normal)
-
-faces = []
-for face in sli.mesh.faces:
-    pt = face.calc_center_bounds()
-    if slicer.between_parallel_planes(pt, sli2.front_coord(),
-                                      sli2.back_coord(), sli2.normal):
-        faces.append(face)
-
-for face in faces:
-    pt = face.calc_center_bounds()
-    geom = face.verts[:] + face.edges[:] + [face]
-    ret = bmesh.ops.bisect_plane(sli.mesh, geom=geom,
-                                 plane_co=pt, plane_no=cross)
-    for elem in ret['geom']:
-        if not isinstance(elem, bmesh.types.BMFace):
-            continue
-        dist = mathutils.geometry.distance_point_to_plane(
-                    elem.calc_center_bounds(), pt, cross)
-        if dist > 0:
-            IPython.embed()
-
+sli.intersect(sli2, invert_cuts=False)
 #IPython.embed()
 
-add_bmesh_to_scene(sli.mesh, "slice1")
-#add_bmesh_to_scene(sli2.mesh, "slice2")
+add_bmesh_to_scene(sli.solid_mesh(), "slice1")
+add_bmesh_to_scene(sli2.solid_mesh(), "slice2")
 
 #IPython.embed()

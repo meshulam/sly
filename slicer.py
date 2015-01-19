@@ -31,7 +31,11 @@ class Slice(object):
         solid = self.mesh.copy()
         solid.transform(Matrix.Translation(-self.normal * self.thickness / 2))
         geom = solid.verts[:] + solid.edges[:] + solid.faces[:]
-        bmesh.ops.solidify(solid, geom=geom, thickness=self.thickness)
+        res = bmesh.ops.extrude_face_region(solid, geom=geom)
+        extruded_verts = [elem for elem in res['geom']
+                          if isinstance(elem, bmesh.types.BMVert)]
+        bmesh.ops.translate(solid, verts=extruded_verts,
+                            vec=(self.normal * self.thickness))
         return solid
 
     def bisect(self, co, no, clear=False):
@@ -67,13 +71,20 @@ class Slice(object):
     def intersect(self, other, invert_cuts=False):
         """Cut slots into this slice and another one so they fit together."""
         cut_dir = self.normal.cross(other.normal)
-        cut_dir = -cut_dir if invert_cuts else cut_dir
+        if invert_cuts:
+            cut_dir = -cut_dir
+
         self.bisect_solid(other)
         other.bisect_solid(self)
 
-        for face in self.mesh.faces:
-            pt = face.calc_center_bounds()  # The point that defines the
-                                        # halfway point where the two cuts meet
+        self_faces = self.mesh.faces[:]     # make a copy since we're mutating stuff
+
+        for face in self_faces:
+            if not face.is_valid:
+                continue
+
+            # The point that defines the halfway point where the two cuts meet
+            pt = face.calc_center_bounds()
             if not other.is_within_thickness(pt):
                 continue         # this isn't a face formed by the bisect_solid
 
@@ -124,7 +135,7 @@ def remove_face_behind_plane(bm, face, plane_co, plane_no):
         if not isinstance(elem, bmesh.types.BMFace):
             continue
         if is_point_behind_plane(elem.calc_center_bounds(), plane_co, plane_no):
-            bmesh.ops.delete(bm, [elem], context=5)
+            bmesh.ops.delete(bm, geom=[elem], context=5)
 
 def is_positive(vector):
     """For any two nonzero vectors X and -X, guaranteed to return true for
