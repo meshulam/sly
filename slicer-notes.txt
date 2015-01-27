@@ -24,5 +24,13 @@ where the slices get cut to fit together. Can transform a slice's polygon geomet
 
 ## Plane - The 3d-2d transformation mentioned above
 
-Place+route
+Placement:
+- Define sheet size
+- Place max part area on sheet (what we optimize for)
+  - Start with biggest area part
+  - Rotate until smallest bounding box
+  - Flip so in portrait mode
+  - Place at origin (bottom left)
+  - Update origin
+- with remaining parts, repeat with new sheet
 

@@ -6,7 +6,6 @@ import bmesh
 import mathutils.geometry
 from mathutils.geometry import distance_point_to_plane
 from mathutils import Vector, Matrix, Quaternion
-import Polygon
 
 Z_UNIT = Vector((0, 0, 1))
 
