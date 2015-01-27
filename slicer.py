@@ -5,7 +5,7 @@ import numpy
 import bmesh
 import mathutils.geometry
 from mathutils.geometry import distance_point_to_plane
-from mathutils import Vector, Matrix, Quaternion
+from mathutils import Vector, Matrix
 
 Z_UNIT = Vector((0, 0, 1))
 
@@ -23,6 +23,7 @@ class Slice(object):
         self.coord = coord
         self.mesh = mesh
         self.thickness = thickness
+        self.cuts = []
         # index tied to the mesh to look up custom data
         self.facetype = self.mesh.faces.layers.int.new('FACETYPE')
 
@@ -67,6 +68,19 @@ class Slice(object):
         d2 = distance_point_to_plane(pt, self.back_coord(), self.normal)
         return (d1 * d2) < 0    # Opposite signs
 
+    def mutual_cut(self, other, invert=False):
+        cut_dir = self.normal.cross(other.normal)
+        if invert:
+            cut_dir = -cut_dir
+
+        temp = self.mesh.copy()
+        edges = temp.bisect(other.coord, other.normal)
+        points = [edge.verts[i].co for edge in edges for i in [0, 1]]
+        (p1, p2) = point_minmax(points, cut_dir)
+        midpt = p1.lerp(p2, 0.5)
+        self.cuts.append(Cut(midpt, cut_dir, other.thickness))
+        other.cuts.append(Cut(midpt, -cut_dir, self.thickness))
+
     def intersect(self, other, invert_cuts=False):
         """Cut slots into this slice and another one so they fit together."""
         cut_dir = self.normal.cross(other.normal)
@@ -94,6 +108,37 @@ class Slice(object):
 
             # clear the part of this face behind the cut_dir plane
             remove_face_behind_plane(self.mesh, face, pt, cut_dir)
+
+class Cut(object):
+    def __init__(self, point, direction, thickness):
+        self.point = point
+        self.direction = direction
+        self.thickness = thickness
+
+class Slice2D(object):
+    def __init__(self, co, no, polys, thickness):
+        self.co = co
+        self.no = no
+        self.polys = polys
+        self.thickness = thickness
+
+    @staticmethod
+    def from_3d(slice3d):
+
+
+
+def point_minmax(points, direction):
+    """Returns the two points out of the given iterable
+    that represent the range when projected in the given direction"""
+    p1 = points.next()
+    p2 = p1
+    for point in points:
+        if direction.dot(point - p1) < 0:
+            p1 = point
+        elif direction.dot(point - p2) > 0:
+            p2 = point
+    return (p1, p2)
+
 
 def bounding_boxes_intersect(face1, face2):
     min1 = numpy.amin([vert.co for vert in face1.verts], axis=0)
