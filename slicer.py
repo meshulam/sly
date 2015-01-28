@@ -3,15 +3,12 @@
 import IPython
 import numpy
 import bmesh
+import shapely
 import mathutils.geometry
 from mathutils.geometry import distance_point_to_plane
 from mathutils import Vector, Matrix
 
 Z_UNIT = Vector((0, 0, 1))
-
-# Not yet used
-FACETYPE = {'REGULAR': 0,
-            'INTERSECTING': 1}
 
 class Slice(object):
 
@@ -24,8 +21,6 @@ class Slice(object):
         self.mesh = mesh
         self.thickness = thickness
         self.cuts = []
-        # index tied to the mesh to look up custom data
-        self.facetype = self.mesh.faces.layers.int.new('FACETYPE')
 
     def solid_mesh(self):
         solid = self.mesh.copy()
@@ -115,17 +110,38 @@ class Cut(object):
         self.direction = direction
         self.thickness = thickness
 
+class Cut2D(Cut):
+    pass
+
 class Slice2D(object):
-    def __init__(self, co, no, polys, thickness):
-        self.co = co
-        self.no = no
+    def __init__(self, xform, polys, thickness):
+        self.transform = xform
         self.polys = polys
         self.thickness = thickness
+        self.cuts = []
 
     @staticmethod
     def from_3d(slice3d):
+        rot = slice3d.normal.rotation_difference(Z_UNIT)  # Quaternion to rotate the normal to Z
 
+        def _to_poly(face):
+            points_2d = []
+            for vert in face.verts:
+                (x, y, z) = rotated(vert.co, rot)
+                points_2d.append((x, y))
+            return shapely.geometry.Polygon(points_2d)
+            # TODO: error checking when projecting to 2d
+        polys = [_to_poly(face) for face in slice3d.mesh.faces]
+        joined = shapely.ops.cascaded_union(polys)
+        xform = rot.conjugated().to_matrix().to_4x4()
+        xform.translation = Z_UNIT * rotated(slice3d.coord, rot).z  # TODO: should be negative?
 
+        sli2d = Slice2D(xform, joined, slice3d.thickness)
+        for cut in slice3d.cuts:
+            p2 = rotated(cut.point, rot).resize_2d()
+            d2 = rotated(cut.direction, rot).resize_2d().normalize()
+            sli2d.cuts.append(Cut2D(p2, d2, cut.thickness))
+        return sli2d
 
 def point_minmax(points, direction):
     """Returns the two points out of the given iterable
