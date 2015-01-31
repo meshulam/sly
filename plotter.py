@@ -10,8 +10,10 @@ class SVGEncoder(object):
         self.page = page
 
         viewbox = ('{} {} {} {}'.format(0, 0, page.width, page.height))
+        wstr = str(page.width) + page.unit
+        hstr = str(page.height) + page.unit
         self.dwg = Drawing(filename=filename, viewBox=viewbox, debug=True,
-                           size=(page.width_str(), page.height_str()))
+                           size=(wstr, hstr))
 
     def _make_part(self, part):
         stroke = part.thickness / 4
@@ -39,15 +41,6 @@ class Page(object):
         self.height = height
         self.unit = unit
         self.parts = []  # Slice2D contains 2d rotation/translation data
-
-    def width_str(self):
-        return str(self.width) + self.unit
-
-    def height_str(self):
-        return str(self.height) + self.unit
-
-    def save(self, filename):
-        self._drawing.saveas(filename)
 
     def add_slice(self, sli2d):
         self.parts.append(sli2d)

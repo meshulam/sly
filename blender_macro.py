@@ -85,5 +85,3 @@ page.place()
 plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
 
 
-#IPython.embed()
-
