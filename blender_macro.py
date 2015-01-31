@@ -75,11 +75,14 @@ for asli in a_slices:
 #for sli in a_slices + b_slices:
 #    add_bmesh_to_scene(sli.solid_mesh())
 
-sli2 = slicer.Slice2D.from_3d(a_slices[0])
 page = plotter.Page(48, 24)
-sli2.apply_cuts()
-page.add_slice(sli2)
-page.to_svg("/Users/matt/output.svg")
+for sli in a_slices:
+    s2d = slicer.Slice2D.from_3d(sli)
+    s2d.apply_cuts()
+    page.add_slice(s2d)
+
+page.place()
+plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
 
 
 #IPython.embed()

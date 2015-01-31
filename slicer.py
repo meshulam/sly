@@ -148,10 +148,14 @@ class PagePosition(object):
 class Slice2D(object):
     def __init__(self, xform, poly, thickness):
         self.transform_3d = xform
-        self.page_position = PagePosition(10, 15, 45)
+        self.page_position = PagePosition()
         self.poly = poly
         self.thickness = thickness
         self.cuts = []
+
+    def move(self, dx, dy):
+        self.page_position.xoff += dx
+        self.page_position.yoff += dy
 
     def apply_cuts(self):
         cut_shapes = [self.get_cut_shape(cut) for cut in self.cuts]
