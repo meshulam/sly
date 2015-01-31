@@ -15,17 +15,19 @@ import bmesh
 import mathutils
 from mathutils import Vector
 import slicer
+import slice_ops
 import plotter
 
 reload(slicer)
+reload(slice_ops)
 reload(plotter)
 
-a_dir = Vector((1, 0, 0))
+a_dir = Vector((1, 1, 0))
 a_pts = [Vector((3, 0, 0)),
          Vector((0, 0, 0)),
          Vector((8, 0, 0)),
          Vector((-5, 0, 0))]
-b_dir = Vector((0, 1, 0))
+b_dir = Vector((-1, 1, 0))
 b_pts = [Vector((0, -3, 0)),
          Vector((0, 0, 0)),
          Vector((0, 3, 0))]
@@ -72,16 +74,17 @@ for asli in a_slices:
     for bsli in b_slices:
         asli.mutual_cut(bsli)
 
-#for sli in a_slices + b_slices:
-#    add_bmesh_to_scene(sli.solid_mesh())
+for sli in a_slices + b_slices:
+    add_bmesh_to_scene(sli.solid_mesh())
 
-page = plotter.Page(48, 24)
-for sli in a_slices:
-    s2d = slicer.Slice2D.from_3d(sli)
-    s2d.apply_cuts()
-    page.add_slice(s2d)
+#page = plotter.Page(48, 24)
+#for sli in a_slices:
+#    s2d = slicer.Slice2D.from_3d(sli)
+#    slice_ops.border(s2d, 1)
+#    s2d.apply_cuts()
+#    page.add_slice(s2d)
 
-page.place()
-plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
+#page.place()
+#plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
 
 

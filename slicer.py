@@ -81,11 +81,17 @@ class Cut(object):
         self.thickness = thickness
 
 class Cut2D(Cut):
-    def polygon(self):
+    def polygon(self, whole_face=False):
         cut_dist = 1000     # Arbitrarily long cut
         offset = self.direction.orthogonal() * self.thickness / 2
+
         p2 = self.point + self.direction * cut_dist
-        pts = [self.point - offset, self.point + offset,
+        p1 = self.point
+
+        if whole_face:
+            p1 = p1 - self.direction * cut_dist
+
+        pts = [p1 - offset, p1 + offset,
                p2 + offset, p2 - offset]
         return shapely.geometry.Polygon(pts)
 
@@ -174,16 +180,6 @@ def point_minmax(points, direction):
         elif direction.dot(point - p2) > 0:
             p2 = point
     return (p1, p2)
-
-def is_positive(vector):
-    """For any two nonzero vectors X and -X, guaranteed to return true for
-    exactly one of them"""
-    for elem in vector:
-        if elem > 0:
-            return True
-        elif elem < 0:
-            return False
-    return False  # Only gets here for zero vectors
 
 def rotated(vector, rot):
     vec_new = vector.copy()
