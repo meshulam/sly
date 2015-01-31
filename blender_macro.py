@@ -15,8 +15,10 @@ import bmesh
 import mathutils
 from mathutils import Vector
 import slicer
+import plotter
 
 reload(slicer)
+reload(plotter)
 
 a_dir = Vector((1, 0, 0))
 a_pts = [Vector((3, 0, 0)),
@@ -68,9 +70,17 @@ for b_pt in b_pts:
 
 for asli in a_slices:
     for bsli in b_slices:
-        asli.intersect(bsli)
+        asli.mutual_cut(bsli)
 
-for sli in a_slices + b_slices:
-    add_bmesh_to_scene(sli.solid_mesh())
+#for sli in a_slices + b_slices:
+#    add_bmesh_to_scene(sli.solid_mesh())
+
+sli2 = slicer.Slice2D.from_3d(a_slices[0])
+page = plotter.Page(48, 24)
+sli2.apply_cuts()
+page.add_slice(sli2)
+page.to_svg("/Users/matt/output.svg")
+
+
 #IPython.embed()
 
