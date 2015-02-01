@@ -45,17 +45,6 @@ class Slice(object):
 
         return cls(origin, normal, mesh, thickness=thickness)
 
-    def solid_mesh(self):
-        solid = self.mesh.copy()
-        solid.transform(Matrix.Translation(-self.no * self.thickness / 2))
-        geom = solid.verts[:] + solid.edges[:] + solid.faces[:]
-        res = bmesh.ops.extrude_face_region(solid, geom=geom)
-        extruded_verts = [elem for elem in res['geom']
-                          if isinstance(elem, bmesh.types.BMVert)]
-        bmesh.ops.translate(solid, verts=extruded_verts,
-                            vec=(self.no * self.thickness))
-        return solid
-
     def bisect(self, co, no, clear=False):
         res = bmesh.ops.bisect_plane(self.mesh, geom=self.all_geometry(),
                                      dist=0.0001,
@@ -86,6 +75,7 @@ class Slice(object):
             self.cuts.append(Cut(midpt, cut_dir, other.thickness))
             other.cuts.append(Cut(midpt, -cut_dir, self.thickness))
         temp.free()
+
 
 class Cut(object):
     def __init__(self, point, direction, thickness):
@@ -136,17 +126,19 @@ class Slice2D(object):
         ref_pt = shapely.geometry.Point(cut.point.x, cut.point.y)
         negative = cut.polygon()
         cutout = self.poly.intersection(negative)
-        if hasattr(cutout, 'geoms'):
-            for poly in cutout.geoms:
-                if not poly.intersects(ref_pt):
-                    continue
-                return poly
-        else:
-            return cutout
+        for poly in each_polygon(cutout):
+            if not poly.intersects(ref_pt):
+                continue
+            return poly
 
     def positioned(self):
         return shapely.affinity.affine_transform(self.poly,
                                                  self.page_position.to_matrix())
+
+    @staticmethod
+    def is_valid(obj):
+        return hasattr(obj, 'poly') and \
+                hasattr(obj.poly, 'exterior')
 
     @staticmethod
     def from_3d(slice3d):
@@ -158,21 +150,52 @@ class Slice2D(object):
                 (x, y, z) = rotated(vert.co, rot)
                 points_2d.append((x, y))
             return shapely.geometry.Polygon(points_2d)
-            # TODO: error checking when projecting to 2d
-        polys = [_to_poly(face) for face in slice3d.mesh.faces]
-        joined = shapely.ops.cascaded_union(polys)
-        xform = rot.conjugated().to_matrix().to_4x4()
-        xform.translation = Z_UNIT * rotated(slice3d.co, rot).z  # TODO: should be negative?
+        polys = []
+        for face in slice3d.mesh.faces:
+            facepoly = _to_poly(face)
+            if facepoly.is_valid:
+                polys.append(facepoly)
+            else:
+                print("Invalid polygon, ignoring")
+        try:
+            joined = shapely.ops.unary_union(polys)
+        except ValueError:
+            print("Error doing unary union. falling back to linear")
+            joined = polys[0]
+            for p in polys[1:]:
+                joined = joined.union(p)
 
-        sli2d = Slice2D(xform, joined, slice3d.thickness)
+        xform = rot.conjugated().to_matrix().to_4x4()
+        #xform.translation = Z_UNIT * rotated(slice3d.co, rot).z  # TODO: should be negative?
+        xform.translation = -slice3d.co
+
+        outs = [Slice2D(xform, poly, slice3d.thickness)
+                for poly in each_polygon(joined)]
+
         for cut in slice3d.cuts:
             p2 = rotated(cut.point, rot)
             p2.resize_2d()
             d2 = rotated(cut.direction, rot)
             d2.resize_2d()
             d2.normalize()
-            sli2d.cuts.append(Cut2D(p2, d2, cut.thickness))
-        return sli2d
+            for sli2d in outs:
+                sli2d.cuts.append(Cut2D(p2, d2, cut.thickness))
+        return outs
+
+def each_polygon(geom):
+    if hasattr(geom, 'geoms'):
+        return geom
+    else:
+        return [geom]
+
+def biggest_polygon(polys):
+    if not hasattr(polys, 'geoms'):
+        return polys
+
+    biggest = max(polys, key=lambda p: p.area)
+    print("Biggest poly: {} total {} ({})"
+          .format(biggest.area, polys.area, len(polys)))
+    return biggest
 
 def point_minmax(points, direction):
     """Returns the two points out of the given iterable
