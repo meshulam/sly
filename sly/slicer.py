@@ -32,6 +32,19 @@ class Slice(object):
     def free(self):
         self.mesh.free()
 
+    @classmethod
+    def create(cls, mesh, origin, normal, thickness):
+        geom = mesh.verts[:] + mesh.edges[:] + mesh.faces[:]
+        ret = bmesh.ops.bisect_plane(mesh, geom=geom,
+                                     dist=0.0001,
+                                     plane_co=origin, plane_no=normal,
+                                     use_snap_center=False,
+                                     clear_outer=True, clear_inner=True)
+        geom = mesh.verts[:] + mesh.edges[:] + mesh.faces[:]
+        bmesh.ops.contextual_create(mesh, geom=geom)
+
+        return cls(origin, normal, mesh, thickness=thickness)
+
     def solid_mesh(self):
         solid = self.mesh.copy()
         solid.transform(Matrix.Translation(-self.no * self.thickness / 2))
@@ -118,14 +131,6 @@ class Slice2D(object):
     def move(self, dx, dy):
         self.page_position.xoff += dx
         self.page_position.yoff += dy
-
-    def apply_cuts(self):
-        cut_shapes = [self.get_cut_shape(cut) for cut in self.cuts]
-        cuts = shapely.ops.cascaded_union(cut_shapes)
-        out = self.poly.difference(cuts)
-        if hasattr(out, 'geoms'):
-            print("WARNING: cut produced disconnected shapes!")
-        self.poly = out
 
     def get_cut_shape(self, cut):
         ref_pt = shapely.geometry.Point(cut.point.x, cut.point.y)

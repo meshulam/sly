@@ -14,41 +14,34 @@ import bpy
 import bmesh
 import mathutils
 from mathutils import Vector
-import slicer
-import slice_ops
-import plotter
+import sly.slicer
+import sly.ops
+import sly.plotter
 
-reload(slicer)
-reload(slice_ops)
-reload(plotter)
+reload(sly.slicer)
+reload(sly.ops)
+reload(sly.plotter)
 
-a_dir = Vector((1, 1, 0))
-a_pts = [Vector((3, 0, 0)),
-         Vector((0, 0, 0)),
-         Vector((8, 0, 0)),
-         Vector((-5, 0, 0))]
-b_dir = Vector((-1, 1, 0))
-b_pts = [Vector((0, -3, 0)),
-         Vector((0, 0, 0)),
-         Vector((0, 3, 0))]
+a_dir = Vector((1, 2, 0))
+a_pts = [Vector((12.5, 0, 0)),
+         Vector((7, 0, 0)),
+         Vector((3, 0, 0)),
+         Vector((-4, 0, 0)),
+         Vector((-6.5, 0, 0)),
+         Vector((-13, 0, 0))
+         ]
+b_dir = Vector((-2, 1, 0))
+b_pts = [Vector((11, 0, 0)),
+         Vector((9, 0, 0)),
+         Vector((5, 0, 0)),
+         Vector((-.5, 0, 0)),
+         Vector((-3.5, 0, 0)),
+         Vector((-8.5, 0, 0))
+         ]
 
 
 def selected():
     return bpy.context.selected_objects[0]
-
-def bisect_to_slice(obj, origin, normal, thickness):
-    scene = bpy.context.scene
-    bm = bmesh.new()
-    bm.from_object(obj, scene)
-    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-    ret = bmesh.ops.bisect_plane(bm, geom=geom,
-                                 dist=0.0001,
-                                 plane_co=origin, plane_no=normal,
-                                 use_snap_center=False,
-                                 clear_outer=True, clear_inner=True)
-    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-    ret2 = bmesh.ops.contextual_create(bm, geom=geom)
-    return slicer.Slice(origin, normal, bm, thickness=thickness)
 
 def add_bmesh_to_scene(bm, name="mesh"):
     mesh = bpy.data.meshes.new(name)
@@ -64,11 +57,20 @@ blender_object = selected()
 a_slices = []
 b_slices = []
 
+scene = bpy.context.scene
+
+bm = bmesh.new()
+bm.from_object(blender_object, scene)
+
 for a_pt in a_pts:
-    a_slices.append(bisect_to_slice(blender_object, a_pt, a_dir, 0.25))
+    mesh = bm.copy()
+    slyce = sly.slicer.Slice.create(mesh, a_pt, a_dir, 0.25)
+    a_slices.append(slyce)
 
 for b_pt in b_pts:
-    b_slices.append(bisect_to_slice(blender_object, b_pt, b_dir, 0.25))
+    mesh = bm.copy()
+    slyce = sly.slicer.Slice.create(mesh, b_pt, b_dir, 0.25)
+    b_slices.append(slyce)
 
 for asli in a_slices:
     for bsli in b_slices:
@@ -77,14 +79,14 @@ for asli in a_slices:
 for sli in a_slices + b_slices:
     add_bmesh_to_scene(sli.solid_mesh())
 
-#page = plotter.Page(48, 24)
+#page = sly.plotter.Page(48, 24)
 #for sli in a_slices:
-#    s2d = slicer.Slice2D.from_3d(sli)
-#    slice_ops.border(s2d, 1)
-#    s2d.apply_cuts()
+#    s2d = sly.slicer.Slice2D.from_3d(sli)
+#    sly.ops.border(s2d, 1)
+#    sly.ops.apply_cuts(s2d)
 #    page.add_slice(s2d)
 
 #page.place()
-#plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
+#sly.plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
 
 

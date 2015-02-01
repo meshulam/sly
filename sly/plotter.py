@@ -2,7 +2,6 @@ import IPython
 import svgwrite
 from svgwrite import Drawing
 from svgwrite.mixins import ViewBox
-import slicer
 import shapely
 
 class SVGEncoder(object):
