@@ -24,6 +24,7 @@ reload(sly.ops)
 reload(sly.plotter)
 reload(sly.encoders)
 
+
 a_dir = Vector((1, 2, 0))
 a_pts = [Vector((12.5, 0, 0)),
          Vector((7, 0, 0)),
@@ -40,6 +41,14 @@ b_pts = [Vector((11, 0, 0)),
          Vector((-3.5, 0, 0)),
          Vector((-8.5, 0, 0))
          ]
+
+## For debugging
+#a_dir = Vector((1, 1, 0))
+#b_dir = Vector((-1, 1, 0))
+#a_pts = [Vector((0, 0, 0)),
+#         Vector((4, 0, 0))]
+#b_pts = [Vector((0, 0, 0)),
+#         Vector((4, 0, 0))]
 
 
 def selected():
@@ -82,7 +91,7 @@ for asli in a_slices:
 #    add_bmesh_to_scene(sli.solid_mesh())
 
 page = sly.plotter.Page(48, 24)
-for i, sli in enumerate(a_slices):
+for i, sli in enumerate(a_slices + b_slices):
     slices = sly.slicer.Slice2D.from_3d(sli)
     for j, sl in enumerate(slices):
         print("adding slice A{}.{}".format(i, j))

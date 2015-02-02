@@ -166,8 +166,7 @@ class Slice2D(object):
                 joined = joined.union(p)
 
         xform = rot.conjugated().to_matrix().to_4x4()
-        #xform.translation = Z_UNIT * rotated(slice3d.co, -rot).z  # TODO: should be negative?
-        xform.translation = -slice3d.co
+        xform.translation = slice3d.co.project(slice3d.no)
 
         outs = [Slice2D(xform, poly, slice3d.thickness)
                 for poly in each_polygon(joined)]
