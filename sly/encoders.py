@@ -21,7 +21,7 @@ def polyfile(slic):
         segments[-1][1] = start     # Close the loop
 
     for ring in slic.poly.interiors:
-        pt = ring.representative_point()
+        pt = ring.centroid
         holes.append([pt.x, pt.y])
 
     out = {'vertices': array(verts),
@@ -32,16 +32,14 @@ def polyfile(slic):
 
 def to_bmesh(obj):
     poly = polyfile(obj)
-    poly = triangulate(poly, 'pq20D')
-    #IPython.embed()
+    p2 = triangulate(poly, 'p')
 
     mesh = bmesh.new()
-
-    bverts = [mesh.verts.new((pt[0], pt[1], 0)) for pt in poly['vertices']]
-    for a, b in poly['segments']:
+    bverts = [mesh.verts.new((pt[0], pt[1], 0)) for pt in p2['vertices']]
+    for a, b in p2['segments']:
         mesh.edges.new((bverts[a], bverts[b]))
-
-    # TODO: add faces
+    for a, b, c in p2['triangles']:
+        mesh.faces.new((bverts[a], bverts[b], bverts[c]))
     mesh.transform(obj.transform_3d)
     return mesh
 

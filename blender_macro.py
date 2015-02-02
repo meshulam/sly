@@ -82,14 +82,16 @@ for asli in a_slices:
 #    add_bmesh_to_scene(sli.solid_mesh())
 
 page = sly.plotter.Page(48, 24)
-for sli in a_slices:
+for i, sli in enumerate(a_slices):
     slices = sly.slicer.Slice2D.from_3d(sli)
-    for sl in slices:
+    for j, sl in enumerate(slices):
+        print("adding slice A{}.{}".format(i, j))
         sly.ops.border(sl, 1)
         sly.ops.apply_cuts(sl)
         page.add_slice(sl)
         smesh = sly.encoders.to_bmesh(sl)
         add_bmesh_to_scene(smesh)
+
 
 page.place()
 sly.plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
