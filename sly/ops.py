@@ -21,7 +21,9 @@ def apply_cuts(sli):
     if not cut_shapes:
         return
 
-    cuts = shapely.ops.cascaded_union(cut_shapes)
+    cuts = shapely.ops.cascaded_union(cut_shapes) \
+                      .buffer(sli.thickness / 1000, cap_style=3)
+                      # To make sure we cut through the piece
     out = sli.poly.difference(cuts)
     sli.poly = biggest_polygon(out)
 

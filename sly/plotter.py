@@ -1,7 +1,6 @@
 import IPython
 import svgwrite
 from svgwrite import Drawing
-from svgwrite.mixins import ViewBox
 import shapely
 
 class SVGEncoder(object):
@@ -45,16 +44,17 @@ class Page(object):
         self.parts.append(sli2d)
 
     def place(self):
-        for part in self.parts:
-            (minx, miny, maxx, maxy) = part.positioned().bounds
-            if minx < 0:
-                part.move(-minx, 0)
-            if miny < 0:
-                part.move(0, -miny)
-
-            if maxx > self.width:
-                part.move(self.width - maxx, 0)
-            if maxy > self.height:
-                part.move(0, self.height - maxy)
+        pass
+#        for part in self.parts:
+#            (minx, miny, maxx, maxy) = part.positioned().bounds
+#            if minx < 0:
+#                part.move(-minx, 0)
+#            if miny < 0:
+#                part.move(0, -miny)
+#
+#            if maxx > self.width:
+#                part.move(self.width - maxx, 0)
+#            if maxy > self.height:
+#                part.move(0, self.height - maxy)
 
 

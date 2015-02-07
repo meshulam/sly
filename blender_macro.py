@@ -43,12 +43,10 @@ b_pts = [Vector((11, 0, 0)),
          ]
 
 ## For debugging
-#a_dir = Vector((1, 1, 0))
-#b_dir = Vector((-1, 1, 0))
-#a_pts = [Vector((0, 0, 0)),
-#         Vector((4, 0, 0))]
-#b_pts = [Vector((0, 0, 0)),
-#         Vector((4, 0, 0))]
+#a_dir = Vector((1, 2, 0))
+#b_dir = Vector((-2, 1, 0))
+#a_pts = [Vector((12.5, 0, 0))]
+#b_pts = [Vector((9, 0, 0))]
 
 
 def selected():
@@ -90,12 +88,12 @@ for asli in a_slices:
 #for sli in a_slices + b_slices:
 #    add_bmesh_to_scene(sli.solid_mesh())
 
-page = sly.plotter.Page(48, 24)
+page = sly.plotter.Page(18, 18)
 for i, sli in enumerate(a_slices + b_slices):
     slices = sly.slicer.Slice2D.from_3d(sli)
     for j, sl in enumerate(slices):
         print("adding slice A{}.{}".format(i, j))
-        sly.ops.border(sl, 1)
+        #sly.ops.border(sl, 1)
         sly.ops.apply_cuts(sl)
         page.add_slice(sl)
         smesh = sly.encoders.to_bmesh(sl)
