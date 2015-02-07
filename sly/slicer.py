@@ -65,13 +65,13 @@ class Slice(object):
             cut_dir = -cut_dir
 
         temp = self.copy()
-        edges = temp.bisect(other.co, other.no)
+        temp.bisect(other.co, other.no, clear=True)
+        midpt_verts = [vert for vert in temp.mesh.verts
+                       if len(vert.link_edges) > 1]
+        bmesh.ops.dissolve_verts(temp.mesh, verts=midpt_verts)
 
-        # Points that lie on the line we just created
-        points = [edge.verts[i].co for edge in edges for i in [0, 1]]
-        if len(points) > 1:
-            (p1, p2) = point_minmax(points, cut_dir)
-            midpt = p1.lerp(p2, 0.5)
+        for edge in temp.mesh.edges:
+            midpt = edge.verts[0].co.lerp(edge.verts[1].co, 0.5)
             self.cuts.append(Cut(midpt, cut_dir, other.thickness))
             other.cuts.append(Cut(midpt, -cut_dir, self.thickness))
         temp.free()
