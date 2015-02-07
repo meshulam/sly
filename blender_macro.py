@@ -35,7 +35,7 @@ a_pts = [Vector((12.5, 0, 0)),
          ]
 b_dir = Vector((-2, 1, 0))
 b_pts = [Vector((11, 0, 0)),
-         Vector((9, 0, 0)),
+         Vector((8.5, 0, 0)),
          Vector((5, 0, 0)),
          Vector((-.5, 0, 0)),
          Vector((-3.5, 0, 0)),
