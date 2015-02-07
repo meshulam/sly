@@ -2,6 +2,7 @@ import IPython
 from triangle import triangulate
 from numpy import array
 import bmesh
+from mathutils import Matrix
 from sly.slicer import Slice2D
 
 def polyfile(slic):
@@ -30,7 +31,7 @@ def polyfile(slic):
         out['holes'] = array(holes)
     return out
 
-def to_bmesh(obj):
+def to_bmesh(obj, solid=True):
     poly = polyfile(obj)
     p2 = triangulate(poly, 'p')
 
@@ -40,18 +41,14 @@ def to_bmesh(obj):
         mesh.edges.new((bverts[a], bverts[b]))
     for a, b, c in p2['triangles']:
         mesh.faces.new((bverts[a], bverts[b], bverts[c]))
+    if solid:
+        mesh.transform(Matrix.Translation((0, 0, -obj.thickness / 2)))
+        geom = mesh.verts[:] + mesh.edges[:] + mesh.faces[:]
+        res = bmesh.ops.extrude_face_region(mesh, geom=geom)
+        extruded_verts = [elem for elem in res['geom']
+                          if isinstance(elem, bmesh.types.BMVert)]
+        bmesh.ops.translate(mesh, verts=extruded_verts,
+                            vec=(0, 0, obj.thickness))
     mesh.transform(obj.transform_3d)
     return mesh
 
-
-
-#    def solid_mesh(self):
-#        solid = self.mesh.copy()
-#        solid.transform(Matrix.Translation(-self.no * self.thickness / 2))
-#        geom = solid.verts[:] + solid.edges[:] + solid.faces[:]
-##        res = bmesh.ops.extrude_face_region(solid, geom=geom)
-#        extruded_verts = [elem for elem in res['geom']
-#                          if isinstance(elem, bmesh.types.BMVert)]
-#        bmesh.ops.translate(solid, verts=extruded_verts,
-#                            vec=(self.no * self.thickness))
-#        return solid
