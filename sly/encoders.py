@@ -2,6 +2,8 @@ import IPython
 from triangle import triangulate
 from numpy import array
 import bmesh
+import shapely.affinity
+from shapely.geometry import Polygon
 from mathutils import Matrix
 from sly.slicer import Slice2D
 
@@ -22,8 +24,8 @@ def polyfile(slic):
         segments[-1][1] = start     # Close the loop
 
     for ring in slic.poly.interiors:
-        pt = ring.centroid
-        holes.append([pt.x, pt.y])
+        hole = Polygon(ring).representative_point()
+        holes.append([hole.x, hole.y])
 
     out = {'vertices': array(verts),
            'segments': array(segments)}
