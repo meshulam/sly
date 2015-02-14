@@ -5,6 +5,7 @@ import IPython
 import numpy
 import bmesh
 import shapely.geometry
+from shapely.geometry import Point
 import shapely.ops
 import shapely.affinity
 import mathutils.geometry
@@ -84,19 +85,44 @@ class Cut(object):
         self.thickness = thickness
 
 class Cut2D(Cut):
-    def polygon(self, whole_face=False):
-        cut_dist = 1000     # Arbitrarily long cut
+    cut_dist = 1000     # Arbitrarily long cut
+
+    def polygon(self, fillet_radius=0):
         offset = self.direction.orthogonal() * self.thickness / 2
 
-        p2 = self.point + self.direction * cut_dist
+        p2 = self.point + self.direction * self.cut_dist
         p1 = self.point
 
-        if whole_face:
-            p1 = p1 - self.direction * cut_dist
+        pts = [p1 - offset, p1 + offset,
+               p2 + offset, p2 - offset]
+        simple = shapely.geometry.Polygon(pts)
+
+        if fillet_radius <= 0:
+            return simple
+
+        if fillet_radius > self.thickness / 4:  # T-bone
+            w_inset = 0
+            h_inset = fillet_radius
+        else:   # Dogbone
+            w_inset = fillet_radius / math.sqrt(2)
+            h_inset = fillet_radius / math.sqrt(2)
+        h0 = self.point + self.direction * h_inset
+        hole_w_offset = self.direction.orthogonal() * (self.thickness / 2 - w_inset)
+        shapes = [Point(h0 + hole_w_offset).buffer(fillet_radius),
+                  Point(h0 - hole_w_offset).buffer(fillet_radius),
+                  simple]
+        return shapely.ops.unary_union(shapes)
+
+    def overlap_poly(self):
+        offset = self.direction.orthogonal() * self.thickness / 2
+
+        p2 = self.point + self.direction * self.cut_dist
+        p1 = self.point - self.direction * self.cut_dist
 
         pts = [p1 - offset, p1 + offset,
                p2 + offset, p2 - offset]
         return shapely.geometry.Polygon(pts)
+
 
 class PagePosition(object):
     def __init__(self, xoff=0, yoff=0, rot_deg=0):
@@ -122,9 +148,9 @@ class Slice2D(object):
         self.page_position.xoff += dx
         self.page_position.yoff += dy
 
-    def get_cut_shape(self, cut):
+    def get_cut_shape(self, cut, fillet_radius=0):
         ref_pt = shapely.geometry.Point(cut.point.x, cut.point.y)
-        negative = cut.polygon()
+        negative = cut.polygon(fillet_radius=fillet_radius)
         cutout = self.poly.intersection(negative)
         for poly in each_polygon(cutout):
             if not poly.intersects(ref_pt):
