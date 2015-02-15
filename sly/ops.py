@@ -1,4 +1,4 @@
-from sly.slicer import biggest_polygon
+from sly.utils import biggest_polygon
 import shapely.ops
 import shapely.geometry
 
@@ -14,7 +14,7 @@ def border(sli, amount):
 def apply_cuts(sli, fillet=0):
     cut_shapes = []
     for cut in sli.cuts:
-        shape = sli.get_cut_shape(cut, fillet_radius=fillet)
+        shape = sli.get_cut_shape(cut, fillet=fillet)
         if shape:
             cut_shapes.append(shape)
 

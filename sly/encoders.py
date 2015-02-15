@@ -51,6 +51,8 @@ def to_bmesh(obj, solid=True):
                           if isinstance(elem, bmesh.types.BMVert)]
         bmesh.ops.translate(mesh, verts=extruded_verts,
                             vec=(0, 0, obj.thickness))
-    mesh.transform(obj.transform)
+    xform = obj.rot.to_matrix().to_4x4()
+    xform.translation = obj.co
+    mesh.transform(xform)
     return mesh
 

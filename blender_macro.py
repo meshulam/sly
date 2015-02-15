@@ -19,49 +19,53 @@ import sly.ops
 import sly.plotter
 import sly.encoders
 import sly.bcontext
+import sly.utils
 
 reload(sly.slicer)
 reload(sly.ops)
 reload(sly.plotter)
 reload(sly.encoders)
+reload(sly.bcontext)
+reload(sly.utils)
 
 scale_factor = 1
 thickness = 0.20
 
-a_dir = Vector((1, 0, 0))
-b_dir = Vector((0, 1, 0))
+a_dir = Vector((2, 1, 0))
+b_dir = Vector((1, -2, 0))
 
 slice_specs = [(Vector((8.8, 0, 0)), a_dir),
                (Vector((6, 0, 0)), a_dir),
                (Vector((0, 0, 0)), a_dir),
                (Vector((-6, 0, 0)), a_dir),
-               (Vector((19.2, 0, 0)), a_dir),
-               (Vector((14.5, 0, 0)), b_dir),
-               (Vector((11, 0, 0)), b_dir),
-               (Vector((5, 0, 0)), b_dir),
+               (Vector((-8.8, 0, 0)), a_dir),
+               (Vector((0, 19.2, 0)), b_dir),
+               (Vector((0, 14.5, 0)), b_dir),
+               (Vector((0, 11, 0)), b_dir),
+               (Vector((0, 5, 0)), b_dir),
                (Vector((0, 0, 0)), b_dir),
-               (Vector((-5, 0, 0)), b_dir),
-               (Vector((-11, 0, 0)), b_dir),
-               (Vector((-14.5, 0, 0)), b_dir),
-               (Vector((-19.2, 0, 0)), b_dir)]
+               (Vector((0, -5, 0)), b_dir),
+               (Vector((0, -11, 0)), b_dir),
+               (Vector((0, -14.5, 0)), b_dir),
+               (Vector((0, -19.2, 0)), b_dir)]
 
 ## For debugging
-slice_specs = [(Vector((0, 0, 0)), a_dir),
-               (Vector((0, 0, 0)), b_dir)]
+#slice_specs = [
+#               (Vector((0, 0, 0)), a_dir),
+ #              (Vector((-6, 0, 0)), a_dir),
+ #              (Vector((0, -19.2, 0)), b_dir)]
 
 
 bm = sly.bcontext.selected_bmesh()
-IPython.embed()
 #bm.transform(Matrix.Scale(scale_factor, 4))
 
 slices = sly.slicer.to_slices(bm, slice_specs, thickness)
-
 
 page = sly.plotter.Page(18, 18)
 for i, sli in enumerate(slices):
     print("adding slice {}".format(i))
     sly.ops.border(sli, thickness * 4)
-    sly.ops.apply_cuts(sli, 0.0625)
+    sly.ops.apply_cuts(sli, fillet=0.05)
     page.add_slice(sli)
     sly.bcontext.add_slice(sli)
 
