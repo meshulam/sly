@@ -51,6 +51,6 @@ def to_bmesh(obj, solid=True):
                           if isinstance(elem, bmesh.types.BMVert)]
         bmesh.ops.translate(mesh, verts=extruded_verts,
                             vec=(0, 0, obj.thickness))
-    mesh.transform(obj.transform_3d)
+    mesh.transform(obj.transform)
     return mesh
 

@@ -13,92 +13,57 @@ import IPython
 import bpy
 import bmesh
 import mathutils
-from mathutils import Vector
+from mathutils import Vector, Matrix
 import sly.slicer
 import sly.ops
 import sly.plotter
 import sly.encoders
+import sly.bcontext
 
 reload(sly.slicer)
 reload(sly.ops)
 reload(sly.plotter)
 reload(sly.encoders)
 
+scale_factor = 1
+thickness = 0.20
 
-a_dir = Vector((1, 2, 0))
-a_pts = [Vector((12.5, 0, 0)),
-         Vector((7, 0, 0)),
-         Vector((3, 0, 0)),
-         Vector((-4, 0, 0)),
-         Vector((-6.5, 0, 0)),
-         Vector((-13, 0, 0))
-         ]
-b_dir = Vector((-2, 1, 0))
-b_pts = [Vector((11, 0, 0)),
-         Vector((8.5, 0, 0)),
-         Vector((5, 0, 0)),
-         Vector((-.5, 0, 0)),
-         Vector((-3.5, 0, 0)),
-         Vector((-8.5, 0, 0))
-         ]
+a_dir = Vector((1, 0, 0))
+b_dir = Vector((0, 1, 0))
+
+slice_specs = [(Vector((8.8, 0, 0)), a_dir),
+               (Vector((6, 0, 0)), a_dir),
+               (Vector((0, 0, 0)), a_dir),
+               (Vector((-6, 0, 0)), a_dir),
+               (Vector((19.2, 0, 0)), a_dir),
+               (Vector((14.5, 0, 0)), b_dir),
+               (Vector((11, 0, 0)), b_dir),
+               (Vector((5, 0, 0)), b_dir),
+               (Vector((0, 0, 0)), b_dir),
+               (Vector((-5, 0, 0)), b_dir),
+               (Vector((-11, 0, 0)), b_dir),
+               (Vector((-14.5, 0, 0)), b_dir),
+               (Vector((-19.2, 0, 0)), b_dir)]
 
 ## For debugging
-#a_dir = Vector((1, 2, 0))
-#b_dir = Vector((-2, 1, 0))
-#a_pts = [Vector((12.5, 0, 0))]
-#b_pts = [Vector((9, 0, 0))]
+slice_specs = [(Vector((0, 0, 0)), a_dir),
+               (Vector((0, 0, 0)), b_dir)]
 
 
-def selected():
-    return bpy.context.selected_objects[0]
+bm = sly.bcontext.selected_bmesh()
+IPython.embed()
+#bm.transform(Matrix.Scale(scale_factor, 4))
 
-def add_bmesh_to_scene(bm, name="mesh"):
-    mesh = bpy.data.meshes.new(name)
-    bm.to_mesh(mesh)
-    ob = bpy.data.objects.new(name, mesh)
-    scene = bpy.context.scene
-    scene.objects.link(ob)
-    scene.objects.active = ob
-    ob.select = True
-    mesh.update()
+slices = sly.slicer.to_slices(bm, slice_specs, thickness)
 
-blender_object = selected()
-a_slices = []
-b_slices = []
-
-scene = bpy.context.scene
-
-bm = bmesh.new()
-bm.from_object(blender_object, scene)
-
-for a_pt in a_pts:
-    mesh = bm.copy()
-    slyce = sly.slicer.Slice.create(mesh, a_pt, a_dir, 0.25)
-    a_slices.append(slyce)
-
-for b_pt in b_pts:
-    mesh = bm.copy()
-    slyce = sly.slicer.Slice.create(mesh, b_pt, b_dir, 0.25)
-    b_slices.append(slyce)
-
-for asli in a_slices:
-    for bsli in b_slices:
-        asli.mutual_cut(bsli)
-
-#for sli in a_slices + b_slices:
-#    add_bmesh_to_scene(sli.solid_mesh())
 
 page = sly.plotter.Page(18, 18)
-for i, sli in enumerate(a_slices + b_slices):
-    slices = sly.slicer.Slice2D.from_3d(sli)
-    for j, sl in enumerate(slices):
-        print("adding slice A{}.{}".format(i, j))
-        #sly.ops.border(sl, 1)
-        sly.ops.apply_cuts(sl)
-        page.add_slice(sl)
-        smesh = sly.encoders.to_bmesh(sl)
-        add_bmesh_to_scene(smesh)
-
+for i, sli in enumerate(slices):
+    print("adding slice {}".format(i))
+    sly.ops.border(sli, thickness * 4)
+    sly.ops.apply_cuts(sli, 0.0625)
+    page.add_slice(sli)
+    sly.bcontext.add_slice(sli)
 
 page.place()
 sly.plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
