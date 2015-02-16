@@ -40,8 +40,8 @@ class Page(object):
         self.unit = unit
         self.parts = []  # Slice2D contains 2d rotation/translation data
 
-    def add_slice(self, sli2d):
-        self.parts.append(sli2d)
+    def add_slice(self, sli):
+        self.parts.append(sli)
 
     def place(self):
         pass

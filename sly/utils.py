@@ -46,16 +46,3 @@ def pairwise(iterable):
     next(b, None)
     return zip(a, b)
 
-
-#def point_minmax(points, direction):
-#    """Returns the two points out of the given iterable
-#    that represent the range when projected in the given direction"""
-#    p1 = points[0]
-#    p2 = p1
-#    for point in points:
-#        if direction.dot(point - p1) < 0:
-#            p1 = point
-#        elif direction.dot(point - p2) > 0:
-#            p2 = point
-#    return (p1, p2)
-

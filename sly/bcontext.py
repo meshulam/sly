@@ -29,6 +29,5 @@ def add_bmesh(bm, name="mesh"):
     ob.select = True
     mesh.update()
 
-
 def selected():
     return bpy.context.selected_objects[0]

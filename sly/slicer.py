@@ -10,67 +10,87 @@ import sly.utils
 import shapely.ops
 import shapely.affinity
 import mathutils.geometry
-from mathutils.geometry import distance_point_to_plane, intersect_line_plane
 from mathutils import Vector, Matrix
 
 Z_UNIT = Vector((0, 0, 1))
 
-class SliceSpec(object):
-    def __init__(self, co, no):
-        self.co = co
-        self.no = no.normalized()
-
-    def to_slices(self, bm_orig, thickness):
-        bm = bm_orig.copy()
-        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-        ret = bmesh.ops.bisect_plane(bm, geom=geom,
-                                     dist=0.00001,
-                                     plane_co=self.co, plane_no=self.no,
-                                     use_snap_center=False,
-                                     clear_outer=True, clear_inner=True)
-        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-        bmesh.ops.contextual_create(bm, geom=geom)
-
-        rot = self.no.rotation_difference(Z_UNIT)  # Quaternion to rotate the normal to Z
-        joined = mesh_to_polys(bm, self.co, rot)
-        bm.free()
-
-        return [Slice2D(self.co, rot, poly, thickness)
-                for poly in sly.utils.each_shape(joined)]
-
-
 def to_slices(bm, slice_specs, thickness):
     slys = []
     for co, no in slice_specs:
-        spec = SliceSpec(co, no)
-        slys.extend(spec.to_slices(bm, thickness))
+        slys.extend(generate_slice(bm, co, no, thickness))
 
     for s1, s2 in itertools.combinations(slys, r=2):
-        if not s1.rot == s2.rot:
-            mutual_cut(s1, s2)
+        sly.ops.mutual_cut(s1, s2)
     return slys
 
+def generate_slice(bm_orig, co, no, thickness):
+    bm = bm_orig.copy()
+    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    ret = bmesh.ops.bisect_plane(bm, geom=geom,
+                                 dist=0.00001,
+                                 plane_co=co, plane_no=no,
+                                 use_snap_center=False,
+                                 clear_outer=True, clear_inner=True)
+    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+    bmesh.ops.contextual_create(bm, geom=geom)
 
-def mutual_cut(sly1, sly2):
-    cut_dir = sly1.cut_direction(sly2)
-    points = []
-    for (a, b) in sly.utils.pairwise(sly1.poly.exterior.coords):
-        pta = sly1.to_3d(a)
-        ptb = sly1.to_3d(b)
+    rot = no.rotation_difference(Z_UNIT)  # Quaternion to rotate the normal to Z
+    joined = mesh_to_polys(bm, co, rot)
+    bm.free()
 
-        intersect = intersect_line_plane(pta, ptb, sly2.co, sly2.normal())
-        # Is the intersecting point between the ends of the segment?
-        if intersect and (pta - intersect).dot(ptb - intersect) <= 0:
-            points.append(intersect)
+    return [Slice(co, rot, poly, thickness)
+            for poly in sly.utils.each_shape(joined)]
 
-    if len(points) > 2:
-        print("More than one intersection between slices. Not yet supported!")
-    elif len(points) == 1:
-        print("Wtf? one intersection?")
-    elif len(points) == 2:
-        midpt = points[0].lerp(points[1], 0.5)
-        sly1.add_cut(midpt, cut_dir, sly2.thickness)
-        sly2.add_cut(midpt, -cut_dir, sly1.thickness)
+
+class Slice(object):
+    def __init__(self, co, rot, poly, thickness):
+        self.co = co
+        self.rot = rot
+        self.page_position = PagePosition()
+        self.poly = poly
+        self.thickness = thickness
+        self.cuts = []
+
+    def to_2d(self, vec, translate=True):
+        co = self.co if translate else None
+        return sly.utils.to_2d(vec, co, self.rot)
+
+    def to_3d(self, vec, translate=True):
+        co = self.co if translate else None
+        return sly.utils.to_3d(vec, co, self.rot)
+
+    def normal(self):
+        return sly.utils.rotated(Z_UNIT, self.rot)
+
+    def move(self, dx, dy):
+        self.page_position.xoff += dx
+        self.page_position.yoff += dy
+
+    def cut_direction(self, other):
+        return self.normal().cross(other.normal())
+
+    def add_cut(self, pt3d, dir3d, thickness):
+        p2 = self.to_2d(pt3d)
+        d2 = self.to_2d(dir3d, translate=False)
+        d2.normalize()
+        self.cuts.append(Cut2D(p2, d2, thickness))
+
+    def get_cut_shape(self, cut, fillet=0):
+        ref_pt = shapely.geometry.Point(cut.point.x, cut.point.y)
+        negative = cut.polygon(fillet=fillet)
+        cutout = self.poly.intersection(negative)
+        for poly in sly.utils.each_shape(cutout):
+            if not poly.intersects(ref_pt):
+                continue
+            return poly
+
+    def positioned(self):
+        return shapely.affinity.affine_transform(self.poly,
+                                                 self.page_position.to_matrix())
+
+    @staticmethod
+    def is_valid(obj):
+        return hasattr(obj, 'poly') and hasattr(obj.poly, 'exterior')
 
 
 class Cut2D(object):
@@ -130,57 +150,9 @@ class PagePosition(object):
                 self.xoff, self.yoff)
 
 
-class Slice2D(object):
-    def __init__(self, co, rot, poly, thickness):
-        self.co = co
-        self.rot = rot
-        self.page_position = PagePosition()
-        self.poly = poly
-        self.thickness = thickness
-        self.cuts = []
-
-    def to_2d(self, vec, translate=True):
-        co = self.co if translate else None
-        return sly.utils.to_2d(vec, co, self.rot)
-
-    def to_3d(self, vec, translate=True):
-        co = self.co if translate else None
-        return sly.utils.to_3d(vec, co, self.rot)
-
-    def normal(self):
-        return sly.utils.rotated(Z_UNIT, self.rot)
-
-    def move(self, dx, dy):
-        self.page_position.xoff += dx
-        self.page_position.yoff += dy
-
-    def cut_direction(self, other):
-        return self.normal().cross(other.normal())
-
-    def add_cut(self, pt3d, dir3d, thickness):
-        p2 = self.to_2d(pt3d)
-        d2 = self.to_2d(dir3d, translate=False)
-        d2.normalize()
-        self.cuts.append(Cut2D(p2, d2, thickness))
-
-    def get_cut_shape(self, cut, fillet=0):
-        ref_pt = shapely.geometry.Point(cut.point.x, cut.point.y)
-        negative = cut.polygon(fillet=fillet)
-        cutout = self.poly.intersection(negative)
-        for poly in sly.utils.each_shape(cutout):
-            if not poly.intersects(ref_pt):
-                continue
-            return poly
-
-    def positioned(self):
-        return shapely.affinity.affine_transform(self.poly,
-                                                 self.page_position.to_matrix())
-
-    @staticmethod
-    def is_valid(obj):
-        return hasattr(obj, 'poly') and hasattr(obj.poly, 'exterior')
-
 def mesh_to_polys(bm, co, rot):
+    """Convert all faces in a bmesh to a shapely polygon or MultiPolygon.
+    Faces are assmued to all be coplanar with the given co and rot."""
     polys = []
     for face in bm.faces:
         poly = face_to_poly(face, co, rot)
@@ -191,7 +163,7 @@ def mesh_to_polys(bm, co, rot):
     return shapely.ops.unary_union(polys)
 
 def face_to_poly(face, co, rot):
-    """Convert a bmesh face to a flat polygon"""
+    """Convert a bmesh face to a 2D polygon"""
     points_2d = []
     for vert in face.verts:
         pt = sly.utils.to_2d(vert.co, co, rot)
