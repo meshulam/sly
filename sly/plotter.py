@@ -1,4 +1,4 @@
-import IPython
+import math
 import svgwrite
 from svgwrite import Drawing
 import shapely
@@ -16,7 +16,7 @@ class SVGEncoder(object):
     def _make_part(self, part):
         stroke = part.thickness / 4
         grp = self.dwg.g(stroke='red', fill='none', stroke_width=stroke)
-        xformed = part.positioned()
+        xformed = part.poly
         for ring in [xformed.exterior] + xformed.interiors[:]:
             grp.add(self.dwg.polygon(points=ring.coords[:]))
 
@@ -57,4 +57,18 @@ class Page(object):
 #            if maxy > self.height:
 #                part.move(0, self.height - maxy)
 
+class PagePosition(object):
+    def __init__(self, xoff=0, yoff=0, rot_deg=0):
+        self.xoff = xoff
+        self.yoff = yoff
+        self.rotation = math.radians(rot_deg)
 
+    def to_matrix(self):
+        return (math.cos(self.rotation), -math.sin(self.rotation),
+                math.sin(self.rotation), math.cos(self.rotation),
+                self.xoff, self.yoff)
+
+# This was on slice previously
+def positioned(self):
+    return shapely.affinity.affine_transform(self.poly,
+                                             self.page_position.to_matrix())

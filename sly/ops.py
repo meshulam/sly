@@ -13,8 +13,9 @@ def border(sli, amount):
     sli.poly = biggest_polygon(newpoly)
 
 def mutual_cut(sli1, sli2):
+    """Given two slices, add the appropriate cuts to them if they intersect"""
     if sli1.rot == sli2.rot:
-        return      # same orientation, so can't cut each other
+        return      # same orientation, so nothing to intersect
 
     cut_dir = sli1.cut_direction(sli2)
     points = []

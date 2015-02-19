@@ -16,14 +16,14 @@ Z_UNIT = Vector((0, 0, 1))
 
 def to_slices(bm, slice_specs, thickness):
     slys = []
-    for co, no in slice_specs:
-        slys.extend(generate_slice(bm, co, no, thickness))
+    for i, (co, no) in enumerate(slice_specs):
+        slys.extend(generate_slice(bm, co, no, thickness, str(i)))
 
     for s1, s2 in itertools.combinations(slys, r=2):
         sly.ops.mutual_cut(s1, s2)
     return slys
 
-def generate_slice(bm_orig, co, no, thickness):
+def generate_slice(bm_orig, co, no, thickness, i):
     bm = bm_orig.copy()
     geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
     ret = bmesh.ops.bisect_plane(bm, geom=geom,
@@ -38,18 +38,20 @@ def generate_slice(bm_orig, co, no, thickness):
     joined = mesh_to_polys(bm, co, rot)
     bm.free()
 
-    return [Slice(co, rot, poly, thickness)
-            for poly in sly.utils.each_shape(joined)]
+    for j, poly in enumerate(sly.utils.each_shape(joined)):
+        yield Slice(co, rot, poly, thickness, identify(i, j))
 
+def identify(id1, id2=0):
+    return "{}.{}".format(id1, id2)
 
 class Slice(object):
-    def __init__(self, co, rot, poly, thickness):
+    def __init__(self, co, rot, poly, thickness, ident=""):
         self.co = co
         self.rot = rot
-        self.page_position = PagePosition()
         self.poly = poly
         self.thickness = thickness
         self.cuts = []
+        self.ident = ident
 
     def to_2d(self, vec, translate=True):
         co = self.co if translate else None
@@ -62,10 +64,6 @@ class Slice(object):
     def normal(self):
         return sly.utils.rotated(Z_UNIT, self.rot)
 
-    def move(self, dx, dy):
-        self.page_position.xoff += dx
-        self.page_position.yoff += dy
-
     def cut_direction(self, other):
         return self.normal().cross(other.normal())
 
@@ -73,7 +71,7 @@ class Slice(object):
         p2 = self.to_2d(pt3d)
         d2 = self.to_2d(dir3d, translate=False)
         d2.normalize()
-        self.cuts.append(Cut2D(p2, d2, thickness))
+        self.cuts.append(Cut(p2, d2, thickness))
 
     def get_cut_shape(self, cut, fillet=0):
         ref_pt = shapely.geometry.Point(cut.point.x, cut.point.y)
@@ -93,7 +91,7 @@ class Slice(object):
         return hasattr(obj, 'poly') and hasattr(obj.poly, 'exterior')
 
 
-class Cut2D(object):
+class Cut(object):
     cut_dist = 1000     # Arbitrarily long cut
 
     def __init__(self, point, direction, thickness):
@@ -136,18 +134,6 @@ class Cut2D(object):
         pts = [p1 - offset, p1 + offset,
                p2 + offset, p2 - offset]
         return shapely.geometry.Polygon(pts)
-
-
-class PagePosition(object):
-    def __init__(self, xoff=0, yoff=0, rot_deg=0):
-        self.xoff = xoff
-        self.yoff = yoff
-        self.rotation = math.radians(rot_deg)
-
-    def to_matrix(self):
-        return (math.cos(self.rotation), -math.sin(self.rotation),
-                math.sin(self.rotation), math.cos(self.rotation),
-                self.xoff, self.yoff)
 
 
 def mesh_to_polys(bm, co, rot):
