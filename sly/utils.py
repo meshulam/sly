@@ -1,5 +1,5 @@
 import itertools
-from mathutils import Quaternion, Vector
+from mathutils import Quaternion, Vector, Matrix
 
 def to_2d(vec, co=None, rot=None):
     rot_conj = rot.conjugated() if rot else Quaternion()

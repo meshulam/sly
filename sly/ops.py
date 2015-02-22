@@ -2,6 +2,7 @@ from sly.utils import biggest_polygon, pairwise
 from mathutils.geometry import intersect_line_plane
 import shapely.ops
 import shapely.geometry
+import IPython
 
 def border(sli, amount):
     cuts = [cut.overlap_poly() for cut in sli.cuts]
@@ -38,6 +39,7 @@ def mutual_cut(sli1, sli2):
         midpt = points[0].lerp(points[1], 0.5)
         sli1.add_cut(midpt, cut_dir, sli2.thickness)
         sli2.add_cut(midpt, -cut_dir, sli1.thickness)
+
 
 def apply_cuts(sli, fillet=0):
     cut_shapes = []

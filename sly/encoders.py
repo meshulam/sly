@@ -5,10 +5,10 @@ import bmesh
 import shapely.affinity
 from shapely.geometry import Polygon
 from mathutils import Matrix
-from sly.slicer import Slice2D
+from sly.slicer import Slice
 
 def polyfile(slic):
-    if not Slice2D.is_valid(slic):
+    if not Slice.is_valid(slic):
         raise ValueError("Slice is not valid!")
 
     verts = []
@@ -51,8 +51,7 @@ def to_bmesh(obj, solid=True):
                           if isinstance(elem, bmesh.types.BMVert)]
         bmesh.ops.translate(mesh, verts=extruded_verts,
                             vec=(0, 0, obj.thickness))
-    xform = obj.rot.to_matrix().to_4x4()
-    xform.translation = obj.co
-    mesh.transform(xform)
+    mesh.transform(obj.rot.to_matrix().to_4x4())
+    mesh.transform(Matrix.Translation(obj.co))
     return mesh
 

@@ -34,7 +34,7 @@ def generate_slice(bm_orig, co, no, thickness, i):
     geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
     bmesh.ops.contextual_create(bm, geom=geom)
 
-    rot = no.rotation_difference(Z_UNIT)  # Quaternion to rotate the normal to Z
+    rot = Z_UNIT.rotation_difference(no)  # Quaternion to rotate Z to the normal
     joined = mesh_to_polys(bm, co, rot)
     bm.free()
 
@@ -74,17 +74,14 @@ class Slice(object):
         self.cuts.append(Cut(p2, d2, thickness))
 
     def get_cut_shape(self, cut, fillet=0):
-        ref_pt = shapely.geometry.Point(cut.point.x, cut.point.y)
+        ref = shapely.geometry.Point(cut.point.x, cut.point.y) \
+                              .buffer(self.thickness / 2)
         negative = cut.polygon(fillet=fillet)
         cutout = self.poly.intersection(negative)
         for poly in sly.utils.each_shape(cutout):
-            if not poly.intersects(ref_pt):
+            if not poly.intersects(ref):
                 continue
             return poly
-
-    def positioned(self):
-        return shapely.affinity.affine_transform(self.poly,
-                                                 self.page_position.to_matrix())
 
     @staticmethod
     def is_valid(obj):
