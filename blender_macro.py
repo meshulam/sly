@@ -29,32 +29,45 @@ reload(sly.bcontext)
 reload(sly.utils)
 
 scale_factor = 1
-thickness = 0.20
+thickness = 0.50
 
-a_dir = Vector((2, 1, 0))
-b_dir = Vector((1, -2, 0))
+#
+#   top view:  ^y ->x
+#   b-----a
+#   |     |
+#   c-----d
+#
+#   / j   \ k
 
-slice_specs = [(Vector((8.8, 0, 0)), a_dir),
-               (Vector((6, 0, 0)), a_dir),
-               (Vector((0, 0, 0)), a_dir),
-               (Vector((-6, 0, 0)), a_dir),
-               (Vector((-8.8, 0, 0)), a_dir),
-               (Vector((0, 19.2, 0)), b_dir),
-               (Vector((0, 14.5, 0)), b_dir),
-               (Vector((0, 11, 0)), b_dir),
-               (Vector((0, 5, 0)), b_dir),
-               (Vector((0, 0, 0)), b_dir),
-               (Vector((0, -5, 0)), b_dir),
-               (Vector((0, -11, 0)), b_dir),
-               (Vector((0, -14.5, 0)), b_dir),
-               (Vector((0, -19.2, 0)), b_dir)]
+x_dir = Vector((1, 0, 0))
+y_dir = Vector((0, 1, 0))
+
+bc2_dir = Vector((1, 0, -0.08))
+ad2_dir = Vector((1, 0, 0.08))
+
+bc_dir = Vector((1, 0, -0.1))
+ad_dir = Vector((1, 0, 0.1))
+
+leg_a = Vector((18.5, 8.5, 0))
+leg_b = Vector((-18.5, 8.5, 0))
+leg_c = Vector((-18.5, -8.5, 0))
+leg_d = Vector((18.5, -8.5, 0))
+
+slice_specs = [(leg_a, ad_dir),
+               (leg_a, y_dir),
+               (leg_c, bc_dir),
+               (leg_c, y_dir),
+               (Vector((20.5, 0, 18)), x_dir),
+               (Vector((-20, 0, 18)), x_dir),
+               (Vector((13, 0, 18)), bc2_dir),
+               (Vector((-13, 0, 18)), ad2_dir),
+               (Vector((5, 0, 0)), x_dir),
+               (Vector((-5, 0, 0)), x_dir),
+               (Vector((0, 4.5, 0)), y_dir),
+               (Vector((0, -4.5, 0)), y_dir),
+               ]
 
 ## For debugging
-#slice_specs = [
-#               (Vector((0, 0, 0)), a_dir),
- #              (Vector((-6, 0, 0)), a_dir),
- #              (Vector((0, -19.2, 0)), b_dir)]
-
 
 bm = sly.bcontext.selected_bmesh()
 #bm.transform(Matrix.Scale(scale_factor, 4))
@@ -64,11 +77,12 @@ slices = sly.slicer.to_slices(bm, slice_specs, thickness)
 page = sly.plotter.Page(18, 18)
 for sli in slices:
     print("adding slice " + sli.ident)
+
     sly.ops.border(sli, thickness * 4)
-    sly.ops.apply_cuts(sli, fillet=0.05)
+    sly.ops.apply_cuts(sli, fillet=0.125)
     page.add_slice(sli)
     sly.bcontext.add_slice(sli)
 
-sly.plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
+#sly.plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
 
 
