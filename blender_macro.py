@@ -14,6 +14,7 @@ import bpy
 import bmesh
 import mathutils
 from mathutils import Vector, Matrix
+from sly.slicer import SliceDef
 import sly.slicer
 import sly.ops
 import sly.plotter
@@ -53,19 +54,20 @@ leg_b = Vector((-18.5, 8.5, 0))
 leg_c = Vector((-18.5, -8.5, 0))
 leg_d = Vector((18.5, -8.5, 0))
 
-slice_specs = [(leg_a, ad_dir),
-               (leg_a, y_dir),
-               (leg_c, bc_dir),
-               (leg_c, y_dir),
-               (Vector((20.5, 0, 18)), x_dir),
-               (Vector((-20, 0, 18)), x_dir),
-               (Vector((13, 0, 18)), bc2_dir),
-               (Vector((-13, 0, 18)), ad2_dir),
-               (Vector((5, 0, 0)), x_dir),
-               (Vector((-5, 0, 0)), x_dir),
-               (Vector((0, 4.5, 0)), y_dir),
-               (Vector((0, -4.5, 0)), y_dir),
-               ]
+slice_specs = [
+                SliceDef(leg_a, ad_dir, z_index=0),
+                SliceDef(leg_c, bc_dir, z_index=0),
+                SliceDef(leg_a, y_dir, z_index=1),
+                SliceDef(leg_c, y_dir, z_index=1),
+                SliceDef((0, 4.5, 0), y_dir, z_index=1),
+                SliceDef((0, -4.5, 0), y_dir, z_index=1),
+                SliceDef((20.5, 0, 18), x_dir, z_index=2),
+                SliceDef((-20, 0, 18), x_dir, z_index=2),
+                SliceDef((13, 0, 18), bc2_dir, z_index=2),
+                SliceDef((-13, 0, 18), ad2_dir, z_index=2),
+                SliceDef((5, 0, 0), x_dir, z_index=2),
+                SliceDef((-5, 0, 0), x_dir, z_index=2),
+                ]
 
 ## For debugging
 
@@ -76,7 +78,7 @@ slices = sly.slicer.to_slices(bm, slice_specs, thickness)
 
 page = sly.plotter.Page(18, 18)
 for sli in slices:
-    print("adding slice " + sli.ident)
+    print("adding slice " + sli.name)
 
     sly.ops.border(sli, thickness * 4)
     sly.ops.apply_cuts(sli, fillet=0.125)

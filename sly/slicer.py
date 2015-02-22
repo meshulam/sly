@@ -14,44 +14,66 @@ from mathutils import Vector, Matrix
 
 Z_UNIT = Vector((0, 0, 1))
 
-def to_slices(bm, slice_specs, thickness):
+
+def to_slices(bm, slice_defs, thickness=None):
     slys = []
-    for i, (co, no) in enumerate(slice_specs):
-        slys.extend(generate_slice(bm, co, no, thickness, str(i)))
+    for i, sdef in enumerate(slice_defs):
+        if not sdef.name:
+            sdef.name = str(i)
+        if thickness:
+            sdef.thickness = thickness
+        slys.extend(sdef.generate_slices(bm))
 
     for s1, s2 in itertools.combinations(slys, r=2):
         sly.ops.mutual_cut(s1, s2)
     return slys
 
-def generate_slice(bm_orig, co, no, thickness, i):
-    bm = bm_orig.copy()
-    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-    ret = bmesh.ops.bisect_plane(bm, geom=geom,
-                                 dist=0.00001,
-                                 plane_co=co, plane_no=no,
-                                 use_snap_center=False,
-                                 clear_outer=True, clear_inner=True)
-    geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-    bmesh.ops.contextual_create(bm, geom=geom)
 
-    rot = Z_UNIT.rotation_difference(no)  # Quaternion to rotate Z to the normal
-    joined = mesh_to_polys(bm, co, rot)
-    bm.free()
+class SliceDef(object):
+    def __init__(self, co, no, thickness=0.5, name="", z_index=0):
+        if not hasattr(co, 'length'):   # Support raw tuples or Vector objs
+            co = Vector(co)
+        if not hasattr(no, 'length'):
+            no = Vector(no)
+        self.co = co
+        self.no = no
+        self.thickness = thickness
+        self.name = name
+        self.z_index = z_index
 
-    for j, poly in enumerate(sly.utils.each_shape(joined)):
-        yield Slice(co, rot, poly, thickness, identify(i, j))
+    def generate_slices(self, bm_orig):
+        bm = bm_orig.copy()
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        ret = bmesh.ops.bisect_plane(bm, geom=geom,
+                                     dist=0.00001,
+                                     plane_co=self.co, plane_no=self.no,
+                                     use_snap_center=False,
+                                     clear_outer=True, clear_inner=True)
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        bmesh.ops.contextual_create(bm, geom=geom)
 
-def identify(id1, id2=0):
-    return "{}.{}".format(id1, id2)
+        rot = Z_UNIT.rotation_difference(self.no)  # Quaternion to rotate Z to the normal
+        joined = mesh_to_polys(bm, self.co, rot)
+        bm.free()
+
+        for i, poly in enumerate(sly.utils.each_shape(joined)):
+            yield Slice(self.co, rot, poly,
+                        self.thickness, z_index=self.z_index,
+                        name=self.identify(i))
+
+    def identify(self, sub_id=0):
+        return "{}.{}".format(self.name, sub_id)
+
 
 class Slice(object):
-    def __init__(self, co, rot, poly, thickness, ident=""):
+    def __init__(self, co, rot, poly, thickness, z_index=0, name=""):
         self.co = co
         self.rot = rot
         self.poly = poly
         self.thickness = thickness
         self.cuts = []
-        self.ident = ident
+        self.z_index = z_index
+        self.name = name
 
     def to_2d(self, vec, translate=True):
         co = self.co if translate else None
@@ -65,7 +87,13 @@ class Slice(object):
         return sly.utils.rotated(Z_UNIT, self.rot)
 
     def cut_direction(self, other):
-        return self.normal().cross(other.normal())
+        direc = self.normal().cross(other.normal())
+
+        if (direc.z > 0 and self.z_index > other.z_index) \
+                or (direc.z < 0 and self.z_index < other.z_index):
+            direc = -direc
+
+        return direc
 
     def add_cut(self, pt3d, dir3d, thickness):
         p2 = self.to_2d(pt3d)
