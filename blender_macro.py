@@ -59,14 +59,14 @@ slice_specs = [
                 SliceDef(leg_c, bc_dir, z_index=0),
                 SliceDef(leg_a, y_dir, z_index=1),
                 SliceDef(leg_c, y_dir, z_index=1),
-                SliceDef((0, 4.5, 0), y_dir, z_index=1),
-                SliceDef((0, -4.5, 0), y_dir, z_index=1),
+                SliceDef((0, 4, 0), y_dir, z_index=1),
+                SliceDef((0, -4, 0), y_dir, z_index=1),
                 SliceDef((20.5, 0, 18), x_dir, z_index=2),
-                SliceDef((-20, 0, 18), x_dir, z_index=2),
-                SliceDef((13, 0, 18), bc2_dir, z_index=2),
-                SliceDef((-13, 0, 18), ad2_dir, z_index=2),
-                SliceDef((5, 0, 0), x_dir, z_index=2),
-                SliceDef((-5, 0, 0), x_dir, z_index=2),
+                SliceDef((-20.5, 0, 18), x_dir, z_index=2),
+                SliceDef((12, 0, 18), x_dir, z_index=2),
+                SliceDef((-12, 0, 18), x_dir, z_index=2),
+                SliceDef((4, 0, 0), x_dir, z_index=2),
+                SliceDef((-4, 0, 0), x_dir, z_index=2),
                 ]
 
 ## For debugging
