@@ -74,6 +74,7 @@ class Slice(object):
         self.cuts = []
         self.z_index = z_index
         self.name = name
+        self.fillet = 0
 
     def to_2d(self, vec, translate=True):
         co = self.co if translate else None
@@ -101,10 +102,10 @@ class Slice(object):
         d2.normalize()
         self.cuts.append(Cut(p2, d2, thickness))
 
-    def get_cut_shape(self, cut, fillet=0):
+    def get_cut_shape(self, cut):
         ref = shapely.geometry.Point(cut.point.x, cut.point.y) \
                               .buffer(self.thickness / 2)
-        negative = cut.polygon(fillet=fillet)
+        negative = cut.polygon(fillet=self.fillet)
         cutout = self.poly.intersection(negative)
         for poly in sly.utils.each_shape(cutout):
             if not poly.intersects(ref):
@@ -137,7 +138,7 @@ class Cut(object):
         if fillet <= 0:
             return simple
 
-        if fillet > self.thickness / 4:  # T-bone
+        if fillet > self.thickness * 0.4:  # T-bone
             w_inset = 0
             h_inset = fillet
         else:   # Dogbone

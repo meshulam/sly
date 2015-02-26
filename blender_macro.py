@@ -77,14 +77,15 @@ bm = sly.bcontext.selected_bmesh()
 slices = sly.slicer.to_slices(bm, slice_specs, thickness)
 
 page = sly.plotter.Page(18, 18)
+
 for sli in slices:
     print("adding slice " + sli.name)
+    sli.fillet = 0.127
 
     sly.ops.border(sli, thickness * 4)
-    sly.ops.apply_cuts(sli, fillet=0.125)
     page.add_slice(sli)
     sly.bcontext.add_slice(sli)
 
-#sly.plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
+sly.plotter.SVGEncoder.encode(page, "/Users/matt/output.svg")
 
 

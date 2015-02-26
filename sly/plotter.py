@@ -2,6 +2,8 @@ import math
 import svgwrite
 from svgwrite import Drawing
 import shapely
+from sly.utils import each_ring
+from sly.ops import cut_poly
 
 class SVGEncoder(object):
     def __init__(self, page, filename):
@@ -14,12 +16,17 @@ class SVGEncoder(object):
                            size=(wstr, hstr))
 
     def _make_part(self, part):
-        stroke = part.thickness / 4
-        grp = self.dwg.g(stroke='red', fill='none', stroke_width=stroke)
+        grp = self.dwg.g(stroke='red', fill='none', stroke_width=1)
         xformed = part.poly
-        for ring in [xformed.exterior] + xformed.interiors[:]:
+        for ring in each_ring(xformed):
             grp.add(self.dwg.polygon(points=ring.coords[:]))
 
+        cuts = self.dwg.g(stroke='blue', fill='none', stroke_width=1)
+        cut_polys = cut_poly(part, cutouts_only=True)
+        for ring in each_ring(cut_polys):
+            cuts.add(self.dwg.polygon(points=ring.coords[:]))
+
+        grp.add(cuts)
         self.dwg.add(grp)
 
     def encode_self(self):

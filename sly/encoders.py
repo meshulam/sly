@@ -6,16 +6,19 @@ import shapely.affinity
 from shapely.geometry import Polygon
 from mathutils import Matrix
 from sly.slicer import Slice
+from sly.ops import cut_poly
 
 def polyfile(slic):
-    if not Slice.is_valid(slic):
-        raise ValueError("Slice is not valid!")
+    if Slice.is_valid(slic):
+        poly = slic.poly
+    else:
+        poly = slic     # OK to just pass in Polygon obj
 
     verts = []
     segments = []
     holes = []
 
-    for ring in [slic.poly.exterior] + slic.poly.interiors[:]:
+    for ring in [poly.exterior] + poly.interiors[:]:
         start = len(verts)
         for coord in ring.coords[:-1]:
             new_ind = len(verts)
@@ -23,7 +26,7 @@ def polyfile(slic):
             segments.append([new_ind, new_ind + 1])
         segments[-1][1] = start     # Close the loop
 
-    for ring in slic.poly.interiors:
+    for ring in poly.interiors:
         hole = Polygon(ring).representative_point()
         holes.append([hole.x, hole.y])
 
@@ -34,7 +37,8 @@ def polyfile(slic):
     return out
 
 def to_bmesh(obj, solid=True):
-    poly = polyfile(obj)
+    with_cuts = cut_poly(obj)
+    poly = polyfile(with_cuts)
     p2 = triangulate(poly, 'p')
 
     mesh = bmesh.new()

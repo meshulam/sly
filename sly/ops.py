@@ -41,20 +41,22 @@ def mutual_cut(sli1, sli2):
         sli2.add_cut(midpt, -cut_dir, sli1.thickness)
 
 
-def apply_cuts(sli, fillet=0):
+def cut_poly(sli, cutouts_only=False):
     cut_shapes = []
     for cut in sli.cuts:
-        shape = sli.get_cut_shape(cut, fillet=fillet)
+        shape = sli.get_cut_shape(cut)
         if shape:
             cut_shapes.append(shape)
 
     if not cut_shapes:
-        return
+        return sli.poly
 
     cuts = shapely.ops.cascaded_union(cut_shapes) \
                       .buffer(sli.thickness / 1000, cap_style=3)
                       # To make sure we cut through the piece
-    out = sli.poly.difference(cuts)
-    sli.poly = biggest_polygon(out)
+    if cutouts_only:
+        return cuts
+    else:
+        return biggest_polygon(sli.poly.difference(cuts))
 
 

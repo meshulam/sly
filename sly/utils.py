@@ -23,6 +23,11 @@ def each_shape(geom):
     else:
         return [geom]
 
+def each_ring(poly):
+    for polygon in each_shape(poly):
+        for ring in [polygon.exterior] + polygon.interiors[:]:
+            yield ring
+
 def biggest_polygon(polys):
     """Returns the shape with the largest area out of the provided
     shapely object or collection"""
