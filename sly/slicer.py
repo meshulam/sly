@@ -15,7 +15,7 @@ from mathutils import Vector, Matrix
 Z_UNIT = Vector((0, 0, 1))
 
 
-def to_slices(bm, slice_defs, thickness=None):
+def to_slices(bm, slice_defs, thickness=None, cut_specs=[]):
     slys = []
     for i, sdef in enumerate(slice_defs):
         if not sdef.name:
@@ -25,7 +25,12 @@ def to_slices(bm, slice_defs, thickness=None):
         slys.extend(sdef.generate_slices(bm))
 
     for s1, s2 in itertools.combinations(slys, r=2):
-        sly.ops.mutual_cut(s1, s2)
+        spec = {}
+        for specline in cut_specs:
+            if s1.name in specline['intersect'] and \
+                    s2.name in specline['intersect']:
+                spec = specline
+        sly.ops.mutual_cut(s1, s2, cut_spec=spec)
     return slys
 
 

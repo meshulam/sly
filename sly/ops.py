@@ -13,7 +13,7 @@ def border(sli, amount):
     newpoly = outlines.intersection(sli.poly)
     sli.poly = biggest_polygon(newpoly)
 
-def mutual_cut(sli1, sli2):
+def mutual_cut(sli1, sli2, cut_spec={}):
     """Given two slices, add the appropriate cuts to them if they intersect"""
     if sli1.rot == sli2.rot:
         return      # same orientation, so nothing to intersect
@@ -35,8 +35,10 @@ def mutual_cut(sli1, sli2):
     # There should always be an even number of crossings
     assert len(points) % 2 == 0
 
+    z_factor = cut_spec.get('z_factor', 0.5)
+
     if len(points) >= 2:
-        midpt = points[0].lerp(points[1], 0.5)
+        midpt = points[0].lerp(points[1], z_factor)
         sli1.add_cut(midpt, cut_dir, sli2.thickness)
         sli2.add_cut(midpt, -cut_dir, sli1.thickness)
 

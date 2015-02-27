@@ -49,10 +49,10 @@ ad2_dir = Vector((1, 0, 0.08))
 bc_dir = Vector((1, 0, -0.1))
 ad_dir = Vector((1, 0, 0.1))
 
-leg_a = Vector((18.5, 8.5, 0))
-leg_b = Vector((-18.5, 8.5, 0))
-leg_c = Vector((-18.5, -8.5, 0))
-leg_d = Vector((18.5, -8.5, 0))
+leg_a = Vector((18, 8.5, 0))
+leg_b = Vector((-18, 8.5, 0))
+leg_c = Vector((-18, -8.5, 0))
+leg_d = Vector((18, -8.5, 0))
 
 slice_specs = [
                 SliceDef(leg_a, ad_dir, z_index=0),
@@ -69,12 +69,20 @@ slice_specs = [
                 SliceDef((-4, 0, 0), x_dir, z_index=2),
                 ]
 
+cut_specs = [
+                {"intersect": ("2.0", "6.0"), "z_factor": 0.7},
+                {"intersect": ("2.0", "7.0"), "z_factor": 0.7},
+                {"intersect": ("3.0", "6.0"), "z_factor": 0.7},
+                {"intersect": ("3.0", "7.0"), "z_factor": 0.7},
+            ]
+
 ## For debugging
 
 bm = sly.bcontext.selected_bmesh()
 #bm.transform(Matrix.Scale(scale_factor, 4))
 
-slices = sly.slicer.to_slices(bm, slice_specs, thickness)
+slices = sly.slicer.to_slices(bm, slice_specs, thickness,
+                              cut_specs=cut_specs)
 
 page = sly.plotter.Page(18, 18)
 

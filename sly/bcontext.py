@@ -16,7 +16,8 @@ def selected_bmesh():
 def add_slice(sli):
     """Add the provided slice to the current scene"""
     smesh = to_bmesh(sli)
-    add_bmesh(smesh)
+    name = "slice" + sli.name
+    add_bmesh(smesh, name=name)
 
 def add_bmesh(bm, name="mesh"):
     """Add the provided bmesh to the current scene"""
