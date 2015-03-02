@@ -30,7 +30,7 @@ reload(sly.bcontext)
 reload(sly.utils)
 
 scale_factor = 1
-thickness = 0.50
+thickness = 0.493
 
 #
 #   top view:  ^y ->x
@@ -43,43 +43,42 @@ thickness = 0.50
 x_dir = Vector((1, 0, 0))
 y_dir = Vector((0, 1, 0))
 
-bc2_dir = Vector((1, 0, -0.08))
-ad2_dir = Vector((1, 0, 0.08))
-
-bc_dir = Vector((1, 0, -0.1))
-ad_dir = Vector((1, 0, 0.1))
-
-leg_a = Vector((18, 8.5, 0))
-leg_b = Vector((-18, 8.5, 0))
-leg_c = Vector((-18, -8.5, 0))
-leg_d = Vector((18, -8.5, 0))
+leg_a = Vector((17.5, 8.5, 0))
+leg_c = Vector((-17.5, -8.5, 0))
 
 slice_specs = [
-                SliceDef(leg_a, ad_dir, z_index=0),
-                SliceDef(leg_c, bc_dir, z_index=0),
+                SliceDef(leg_a, x_dir, z_index=0),
+                SliceDef(leg_c, x_dir, z_index=0),
                 SliceDef(leg_a, y_dir, z_index=1),
                 SliceDef(leg_c, y_dir, z_index=1),
-                SliceDef((0, 4, 0), y_dir, z_index=1),
-                SliceDef((0, -4, 0), y_dir, z_index=1),
-                SliceDef((20.5, 0, 18), x_dir, z_index=2),
-                SliceDef((-20.5, 0, 18), x_dir, z_index=2),
-                SliceDef((12, 0, 18), x_dir, z_index=2),
-                SliceDef((-12, 0, 18), x_dir, z_index=2),
-                SliceDef((4, 0, 0), x_dir, z_index=2),
-                SliceDef((-4, 0, 0), x_dir, z_index=2),
+                SliceDef((0, 4, 0), y_dir, z_index=2),
+                SliceDef((0, -4, 0), y_dir, z_index=2),
+                SliceDef((20, 0, 18), x_dir, z_index=3),
+                SliceDef((-20, 0, 18), x_dir, z_index=3),
+                SliceDef((12, 0, 18), x_dir, z_index=3),
+                SliceDef((-12, 0, 18), x_dir, z_index=3),
+                SliceDef((4, 0, 0), x_dir, z_index=3),
+                SliceDef((-4, 0, 0), x_dir, z_index=3),
                 ]
 
 cut_specs = [
-                {"intersect": ("2.0", "6.0"), "z_factor": 0.7},
-                {"intersect": ("2.0", "7.0"), "z_factor": 0.7},
-                {"intersect": ("3.0", "6.0"), "z_factor": 0.7},
-                {"intersect": ("3.0", "7.0"), "z_factor": 0.7},
+                {"intersect": ("2.0", "6.0"), "z_factor": 0.25},
+                {"intersect": ("2.0", "7.0"), "z_factor": 0.75},
+                {"intersect": ("3.0", "6.0"), "z_factor": 0.25},
+                {"intersect": ("3.0", "7.0"), "z_factor": 0.75},
+
+                {"intersect": ("5.0", "6.0"), "z_factor": 0.35},
+                {"intersect": ("5.0", "7.0"), "z_factor": 0.65},
+                {"intersect": ("4.0", "6.0"), "z_factor": 0.65},
+                {"intersect": ("4.0", "7.0"), "z_factor": 0.35},
             ]
+
+#slice_specs = [SliceDef((0, 0, 18.8), Vector((0, 0, 1)))]
+#cut_specs = []
 
 ## For debugging
 
 bm = sly.bcontext.selected_bmesh()
-#bm.transform(Matrix.Scale(scale_factor, 4))
 
 slices = sly.slicer.to_slices(bm, slice_specs, thickness,
                               cut_specs=cut_specs)
@@ -88,7 +87,7 @@ page = sly.plotter.Page(18, 18)
 
 for sli in slices:
     print("adding slice " + sli.name)
-    sli.fillet = 0.127
+    sli.fillet = 0.125
 
     sly.ops.border(sli, thickness * 4)
     page.add_slice(sli)

@@ -111,7 +111,7 @@ class Slice(object):
         ref = shapely.geometry.Point(cut.point.x, cut.point.y) \
                               .buffer(self.thickness / 2)
         negative = cut.polygon(fillet=self.fillet)
-        cutout = self.poly.intersection(negative)
+        cutout = self.poly.buffer(self.thickness).intersection(negative)
         for poly in sly.utils.each_shape(cutout):
             if not poly.intersects(ref):
                 continue
