@@ -1,35 +1,16 @@
 import sys
 
-lib_path = '/Users/matt/venv/blender/lib/python3.4/site-packages'
+# There's probably a better way to load external modules to run within
+# Blender. But this worked for me.
+lib_path = '/path/to/virtualenv/blender/lib/python3.4/site-packages'
 if lib_path not in sys.path:
     sys.path.append(lib_path)
 
-module_path = '/Users/matt/Dropbox/art/slots'
-if module_path not in sys.path:
-    sys.path.append(module_path)
-
-from importlib import reload
-import IPython
-import bpy
-import bmesh
-import mathutils
-from mathutils import Vector, Matrix
-from sly.slicer import SliceDef
-import sly.slicer
+from mathutils import Vector
+from sly.slicer import SliceDef, to_slices
 import sly.ops
 import sly.plotter
-import sly.encoders
 import sly.bcontext
-import sly.utils
-
-reload(sly.slicer)
-reload(sly.ops)
-reload(sly.plotter)
-reload(sly.encoders)
-reload(sly.bcontext)
-reload(sly.utils)
-
-thickness = 0.493
 
 #
 #   top view:  ^y ->x
@@ -37,6 +18,8 @@ thickness = 0.493
 #   |     |
 #   c-----d
 #
+
+thickness = 0.493
 
 x_dir = Vector((1, 0, 0))
 y_dir = Vector((0, 1, 0))
@@ -59,6 +42,9 @@ slice_specs = [
                 SliceDef((-4, 0, 0), x_dir, z_index=3),
                 ]
 
+# Override for cuts that you don't want to be exactly 50% of the way
+# through. This should be cleaned up to be aware of which way Up is,
+# and to allow better ways to reference slice intersections.
 cut_specs = [
                 {"intersect": ("2.0", "6.0"), "z_factor": 0.25},
                 {"intersect": ("2.0", "7.0"), "z_factor": 0.75},
@@ -74,14 +60,14 @@ cut_specs = [
 
 bm = sly.bcontext.selected_bmesh()
 
-slices = sly.slicer.to_slices(bm, slice_specs, thickness,
-                              cut_specs=cut_specs)
+slices = to_slices(bm, slice_specs, thickness,
+                   cut_specs=cut_specs)
 
-page = sly.plotter.Page(18, 18)
+page = sly.plotter.Page(30, 30)
 
 for sli in slices:
     print("adding slice " + sli.name)
-    sli.fillet = 0.125
+    sli.fillet = 0.125 / 2
 
     sly.ops.border(sli, thickness * 4)
     page.add_slice(sli)
