@@ -1,16 +1,13 @@
-# Slicer: Classes for 3D construction from 2D parts
-#
 import itertools
 import math
-import IPython
-import numpy
 import bmesh
 import shapely.geometry
 import sly.utils
 import shapely.ops
-import shapely.affinity
-import mathutils.geometry
 from mathutils import Vector, Matrix
+
+"""The main module in Sly."""
+
 
 Z_UNIT = Vector((0, 0, 1))
 
@@ -71,6 +68,8 @@ class SliceDef(object):
 
 
 class Slice(object):
+    """A 2D shape oriented in 3D space. The core object in the Sly library."""
+
     def __init__(self, co, rot, poly, thickness, z_index=0, name=""):
         self.co = co
         self.rot = rot
@@ -123,6 +122,8 @@ class Slice(object):
 
 
 class Cut(object):
+    """A cutout from a slice. Perpendicular slices fit together by sliding
+    their cuts into each other"""
     cut_dist = 1000     # Arbitrarily long cut
 
     def __init__(self, point, direction, thickness):

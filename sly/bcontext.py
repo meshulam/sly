@@ -1,11 +1,14 @@
-"""
-The functions in this module can only be called from within blender.
-It's basically just some convenience functions around blender's bpy module.
-"""
-
 from sly.encoders import to_bmesh
 import bpy
 import bmesh
+
+"""
+Module containing functions for interacting with the Blender runtime.
+It's basically just some convenience functions around blender's bpy module.
+Other than the functions in this module, Sly does not rely on running within
+Blender.
+"""
+
 
 def selected_bmesh():
     ob = selected()
@@ -31,4 +34,5 @@ def add_bmesh(bm, name="mesh"):
     mesh.update()
 
 def selected():
+    """Return the first selected object from the Blender scene"""
     return bpy.context.selected_objects[0]

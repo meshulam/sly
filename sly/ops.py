@@ -5,6 +5,8 @@ import shapely.geometry
 import IPython
 
 def border(sli, amount):
+    """Cut holes in large empty spaces in the polygon, leaving just a border
+    of the given thickness."""
     cuts = [cut.overlap_poly() for cut in sli.cuts]
     cut_outline = shapely.ops.cascaded_union(cuts) \
                              .buffer(amount * 0.5)
@@ -44,6 +46,8 @@ def mutual_cut(sli1, sli2, cut_spec={}):
 
 
 def cut_poly(sli, cutouts_only=False):
+    """Apply a slice's cuts to the polygon. If cutouts_only is True,
+    Just return the negative space of the cuts themselves."""
     cut_shapes = []
     for cut in sli.cuts:
         shape = sli.get_cut_shape(cut)

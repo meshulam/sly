@@ -5,6 +5,9 @@ import shapely
 from sly.utils import each_ring
 from sly.ops import cut_poly
 
+"""Still in progress. Eventually would like to implement placement of shapes
+on a page."""
+
 class SVGEncoder(object):
     def __init__(self, page, filename):
         self.page = page

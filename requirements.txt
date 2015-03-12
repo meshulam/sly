@@ -1,0 +1,5 @@
+numpy==1.9.1
+Shapely==1.5.2
+mathutils==2.73
+svgwrite==1.1.6
+triangle==2013.04.05

@@ -1,14 +1,43 @@
-import IPython
 from triangle import triangulate
 from numpy import array
 import bmesh
-import shapely.affinity
 from shapely.geometry import Polygon
 from mathutils import Matrix
 from sly.slicer import Slice
 from sly.ops import cut_poly
 
-def polyfile(slic):
+
+def to_bmesh(obj, solid=True):
+    """Convert the slice to a bmesh positioned in 3-space. If solid is True,
+    extrude the polygon to the proper thickness."""
+    with_cuts = cut_poly(obj)
+    poly = _polyfile(with_cuts)
+
+    # Convert the polygon to a set of triangles. Some polygons can't be
+    # represented as a single n-gon, so this allows them to be rendered
+    # correctly.
+    p2 = triangulate(poly, 'p')
+
+    mesh = bmesh.new()
+    bverts = [mesh.verts.new((pt[0], pt[1], 0)) for pt in p2['vertices']]
+    for a, b in p2['segments']:
+        mesh.edges.new((bverts[a], bverts[b]))
+    for a, b, c in p2['triangles']:
+        mesh.faces.new((bverts[a], bverts[b], bverts[c]))
+    if solid:
+        mesh.transform(Matrix.Translation((0, 0, -obj.thickness / 2)))
+        geom = mesh.verts[:] + mesh.edges[:] + mesh.faces[:]
+        res = bmesh.ops.extrude_face_region(mesh, geom=geom)
+        extruded_verts = [elem for elem in res['geom']
+                          if isinstance(elem, bmesh.types.BMVert)]
+        bmesh.ops.translate(mesh, verts=extruded_verts,
+                            vec=(0, 0, obj.thickness))
+    mesh.transform(obj.rot.to_matrix().to_4x4())
+    mesh.transform(Matrix.Translation(obj.co))
+    return mesh
+
+def _polyfile(slic):
+    """An intermediate format for passing to 'triangle'."""
     if Slice.is_valid(slic):
         poly = slic.poly
     else:
@@ -35,27 +64,3 @@ def polyfile(slic):
     if holes:
         out['holes'] = array(holes)
     return out
-
-def to_bmesh(obj, solid=True):
-    with_cuts = cut_poly(obj)
-    poly = polyfile(with_cuts)
-    p2 = triangulate(poly, 'p')
-
-    mesh = bmesh.new()
-    bverts = [mesh.verts.new((pt[0], pt[1], 0)) for pt in p2['vertices']]
-    for a, b in p2['segments']:
-        mesh.edges.new((bverts[a], bverts[b]))
-    for a, b, c in p2['triangles']:
-        mesh.faces.new((bverts[a], bverts[b], bverts[c]))
-    if solid:
-        mesh.transform(Matrix.Translation((0, 0, -obj.thickness / 2)))
-        geom = mesh.verts[:] + mesh.edges[:] + mesh.faces[:]
-        res = bmesh.ops.extrude_face_region(mesh, geom=geom)
-        extruded_verts = [elem for elem in res['geom']
-                          if isinstance(elem, bmesh.types.BMVert)]
-        bmesh.ops.translate(mesh, verts=extruded_verts,
-                            vec=(0, 0, obj.thickness))
-    mesh.transform(obj.rot.to_matrix().to_4x4())
-    mesh.transform(Matrix.Translation(obj.co))
-    return mesh
-
