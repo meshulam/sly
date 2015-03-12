@@ -29,7 +29,6 @@ reload(sly.encoders)
 reload(sly.bcontext)
 reload(sly.utils)
 
-scale_factor = 1
 thickness = 0.493
 
 #
@@ -38,7 +37,6 @@ thickness = 0.493
 #   |     |
 #   c-----d
 #
-#   / j   \ k
 
 x_dir = Vector((1, 0, 0))
 y_dir = Vector((0, 1, 0))
@@ -73,10 +71,6 @@ cut_specs = [
                 {"intersect": ("4.0", "7.0"), "z_factor": 0.35},
             ]
 
-#slice_specs = [SliceDef((0, 0, 18.8), Vector((0, 0, 1)))]
-#cut_specs = []
-
-## For debugging
 
 bm = sly.bcontext.selected_bmesh()
 
