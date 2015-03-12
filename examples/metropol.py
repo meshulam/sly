@@ -19,7 +19,7 @@ import sly.bcontext
 #   c-----d
 #
 
-thickness = 0.493
+thickness = 0.5
 
 x_dir = Vector((1, 0, 0))
 y_dir = Vector((0, 1, 0))

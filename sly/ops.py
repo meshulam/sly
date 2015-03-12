@@ -21,11 +21,10 @@ def mutual_cut(sli1, sli2, cut_spec={}):
         return      # same orientation, so nothing to intersect
 
     cut_dir = sli1.cut_direction(sli2)
-    points = []
-    for (a, b) in pairwise(sli1.poly.exterior.coords):
-        pta = sli1.to_3d(a)
-        ptb = sli1.to_3d(b)
+    verts_3d = [sli1.to_3d(pt) for pt in sli1.poly.exterior.coords]
 
+    points = []
+    for (pta, ptb) in pairwise(verts_3d):
         intersect = intersect_line_plane(pta, ptb, sli2.co, sli2.normal())
         # Is the intersecting point between the ends of the segment?
         if intersect and (pta - intersect).dot(ptb - intersect) <= 0:
