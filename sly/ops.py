@@ -2,7 +2,6 @@ from sly.utils import biggest_polygon, pairwise
 from mathutils.geometry import intersect_line_plane
 import shapely.ops
 import shapely.geometry
-import IPython
 
 def border(sli, amount):
     """Cut holes in large empty spaces in the polygon, leaving just a border
