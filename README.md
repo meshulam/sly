@@ -63,7 +63,7 @@ Python packages. Commands should work in any Unixy environment; YMMV.
 6. Copy the following files and directories from `sly-venv/lib/python3.4/site-packages`
    to the path in the above step: `Cython/`, `cython.py`, `pyparsing.py`, `pyximport/`,
    `shapely/`, `svgwrite/`, `triangle/`.
-7. Copy the sly/ directory (the one which contains __init__.py, not the whole repo) to 
+7. Copy the sly/ directory (the one which contains `__init__.py`, not the whole repo) to 
    the same path.
 
 ## Usage
