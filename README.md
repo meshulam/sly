@@ -38,16 +38,19 @@ Python packages. Commands should work in any Unixy environment; YMMV.
 
 1. Clone or download this repository and cd into the directory
 2. Create a virtualenv so you can more easily find the modules you install:
+
    ```virtualenv --python=/path/to/python3 ./sly-venv```
 3. Switch into the virtualenv:
+
    ```source ./sly-venv/bin/activate```
 4. Install the dependencies:
+
    ```pip install -r requirements.txt```
 5. Figure out where to put the modules so that Blender can find them.
 
    For Windows:
 
-       C:\Documents and Settings\{username}\AppData\Roaming\Blender Foundation\Blender\{version}\scripts\addons\
+        C:\Documents and Settings\{username}\AppData\Roaming\Blender Foundation\Blender\{version}\scripts\addons\
 
    For Unix/Linux/etc:
 
