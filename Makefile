@@ -1,12 +1,15 @@
+OUTFILE=sly-addon.zip
 
-deps:
-	cd deps && zip -r ../sly-addon.zip .
+default: prepare deps zip
 
-addon:
-	zip -r sly-addon.zip sly/
+prepare:
+	mkdir -p build
+	cp -r sly build/
 
-addon-test:
-	cd addon && zip -r ../sly-addon.zip ohai.py modules
+deps: prepare
+
+zip: prepare
+	cd build && zip -r ../$(OUTFILE) .
 
 
-.PHONY: deps addon addon-zip
+.PHONY: prepare deps zip

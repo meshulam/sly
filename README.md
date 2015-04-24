@@ -3,7 +3,7 @@
 A Python library for 3D construction from 2D parts. 
 
 Sly is still undergoing heavy development, and some functions may be incomplete
-or broken. More documentation is forthcoming.
+or broken. If you need help, [open an issue!](https://github.com/meshulam/sly/issues)
 
 ## Installation
 
