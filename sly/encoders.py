@@ -1,66 +1,36 @@
-from triangle import triangulate
-from numpy import array
 import bmesh
-from shapely.geometry import Polygon
 from mathutils import Matrix
-from sly.slicer import Slice
 from sly.ops import cut_poly
 
 
 def to_bmesh(obj, solid=True):
     """Convert the slice to a bmesh positioned in 3-space. If solid is True,
     extrude the polygon to the proper thickness."""
-    with_cuts = cut_poly(obj)
-    poly = _polyfile(with_cuts)
+    poly = cut_poly(obj)
 
-    # Convert the polygon to a set of triangles. Some polygons can't be
-    # represented as a single n-gon, so this allows them to be rendered
-    # correctly.
-    p2 = triangulate(poly, 'p')
-
-    mesh = bmesh.new()
-    bverts = [mesh.verts.new((pt[0], pt[1], 0)) for pt in p2['vertices']]
-    for a, b in p2['segments']:
-        mesh.edges.new((bverts[a], bverts[b]))
-    for a, b, c in p2['triangles']:
-        mesh.faces.new((bverts[a], bverts[b], bverts[c]))
-    if solid:
-        mesh.transform(Matrix.Translation((0, 0, -obj.thickness / 2)))
-        geom = mesh.verts[:] + mesh.edges[:] + mesh.faces[:]
-        res = bmesh.ops.extrude_face_region(mesh, geom=geom)
-        extruded_verts = [elem for elem in res['geom']
-                          if isinstance(elem, bmesh.types.BMVert)]
-        bmesh.ops.translate(mesh, verts=extruded_verts,
-                            vec=(0, 0, obj.thickness))
-    mesh.transform(obj.rot.to_matrix().to_4x4())
-    mesh.transform(Matrix.Translation(obj.co))
-    return mesh
-
-def _polyfile(slic):
-    """An intermediate format for passing to 'triangle'."""
-    if Slice.is_valid(slic):
-        poly = slic.poly
-    else:
-        poly = slic     # OK to just pass in Polygon obj
-
-    verts = []
-    segments = []
-    holes = []
+    bm = bmesh.new()
 
     for ring in [poly.exterior] + poly.interiors[:]:
-        start = len(verts)
-        for coord in ring.coords[:-1]:
-            new_ind = len(verts)
-            verts.append(list(coord))
-            segments.append([new_ind, new_ind + 1])
-        segments[-1][1] = start     # Close the loop
+        verts = []
+        for pt in ring.coords[:-1]:
+            verts.append(bm.verts.new((pt[0], pt[1], 0)))
+            if len(verts) > 1:
+                bm.edges.new(verts[-2:])
+        bm.edges.new((verts[-1], verts[0]))  # Close the loop
 
-    for ring in poly.interiors:
-        hole = Polygon(ring).representative_point()
-        holes.append([hole.x, hole.y])
+    bmesh.ops.triangle_fill(bm, edges=bm.edges[:],
+                            use_dissolve=True)
 
-    out = {'vertices': array(verts),
-           'segments': array(segments)}
-    if holes:
-        out['holes'] = array(holes)
-    return out
+    if solid:
+        bm.transform(Matrix.Translation((0, 0, -obj.thickness / 2)))
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        res = bmesh.ops.extrude_face_region(bm, geom=geom)
+        extruded_verts = [elem for elem in res['geom']
+                          if isinstance(elem, bmesh.types.BMVert)]
+        bmesh.ops.translate(bm, verts=extruded_verts,
+                            vec=(0, 0, obj.thickness))
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.transform(obj.rot.to_matrix().to_4x4())
+    bm.transform(Matrix.Translation(obj.co))
+    return bm
+
