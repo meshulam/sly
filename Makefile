@@ -1,15 +1,18 @@
 OUTFILE=sly-addon.zip
 
-default: prepare deps zip
+all: prepare deps zip
 
 prepare:
-	mkdir -p build
-	cp -r sly build/
+	mkdir -p build/modules
+	cp -r sly build/modules
 
 deps: prepare
+	cp -r deps/ build/modules
 
 zip: prepare
-	cd build && zip -r ../$(OUTFILE) .
+	cd build && zip -r $(OUTFILE) .
 
+clean:
+	rm -rf build/
 
-.PHONY: prepare deps zip
+.PHONY: all prepare deps zip
