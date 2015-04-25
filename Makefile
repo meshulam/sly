@@ -10,7 +10,7 @@ deps: prepare
 	cp -r deps/ build/modules
 
 zip: prepare
-	cd build && zip -r $(OUTFILE) .
+	cd build && find . \! -name "*.pyc" -print | zip $(OUTFILE) -@
 
 clean:
 	rm -rf build/
