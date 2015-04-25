@@ -2,70 +2,96 @@
 
 A Python library for 3D construction from 2D parts. 
 
-Sly is still undergoing heavy development, and some functions may be incomplete
-or broken. If you need help, [open an issue!](https://github.com/meshulam/sly/issues)
+Sly is still undergoing heavy development, and you may find that
+things are broken. If you run into a problem, 
+[open an issue!](https://github.com/meshulam/sly/issues)
+
 
 ## Installation
 
 ### Dependencies
 
-Sly has several external dependencies:
+Sly has two external dependencies:
 
-* [Blender](http://www.blender.org/) of course. Must be version 2.71 or later.
-* [GEOS](http://trac.osgeo.org/geos/) - Can be installed via Yum/Apt/Homebrew/etc. 
+* [Blender](http://www.blender.org/) of course; version 2.71 or later.
+* [GEOS](http://trac.osgeo.org/geos/) - High performance geometry
+  functions. Can be installed via Yum/Apt/Homebrew/etc. 
   Seems the only Windows binary is through [OSGeo4W](http://trac.osgeo.org/osgeo4w/).
-* Various Python Modules (See next step)
 
 
-### Installing Sly and Python dependencies in Blender (Easy way)
+### Installing Sly into Blender
 
-Since some of the Python dependencies rely on C modules, Sly can't have a
-platform-independent release with all the deps rolled in. I've created a zipfile
-for OS X, but for other platforms you'll need to use the hard way below.
-
-1. Download the sly-osx-addon.zip file from the releases page
+1. Download the latest sly-addon.zip zipfile from the 
+   [releases page](https://github.com/meshulam/sly/releases)
 2. Open the Blender preferences and go to the *Add-ons* tab
 3. Click *Install from File...* at the bottom and select the
-   zipfile.
-4. You're done! Sly is immediately available in Blender's Python
-   environment; no restart required.
+   zipfile you downloaded.
+4. Restart Blender
 
+If you want to generate the zipfile from source, clone this repository
+and run `make`. The resulting archive is at `build/sly-addon.zip`.
+At the moment the "build" just consists of moving some files around
+and zipping them up. In the future it might also download the latest versions
+of dependencies or do platform-specific build stuff. But for now it doesn't
+do much.
 
-### Installing Sly and Python dependencies in Blender (Hard way)
+Note that Sly also depends on some Python modules that Blender provides. 
+This means that for now, Sly only works from inside Blender. In the future
+I'd like to have some way of running it standalone, but that's not possible
+yet.
 
-This method requires a local Python3 installation and some familiarity dealing with
-Python packages. Commands should work in any Unixy environment; YMMV.
-
-1. Clone or download this repository and cd into the directory
-2. Create a virtualenv so you can more easily find the modules you install:
-
-   ```virtualenv --python=/path/to/python3 ./sly-venv```
-3. Switch into the virtualenv:
-
-   ```source ./sly-venv/bin/activate```
-4. Install the dependencies:
-
-   ```pip install -r requirements.txt```
-5. Figure out where to put the modules so that Blender can find them.
-
-   For Windows:
-
-        C:\Documents and Settings\{username}\AppData\Roaming\Blender Foundation\Blender\{version}\scripts\addons\
-
-   For Unix/Linux/etc:
-
-        $HOME/.config/blender/{version}/scripts/addons/
-
-    For OS X:
-
-        /Users/{user}/Library/Application Support/Blender/{version}/scripts/addons/
-
-6. Copy the following files and directories from `sly-venv/lib/python3.4/site-packages`
-   to the path in the above step: `Cython/`, `cython.py`, `pyparsing.py`, `pyximport/`,
-   `shapely/`, `svgwrite/`, `triangle/`.
-7. Copy the sly/ directory (the one which contains `__init__.py`, not the whole repo) to 
-   the same path.
 
 ## Usage
 
-See examples/chair.blend
+### Preparing the model
+
+Open a Blender project which contains a mesh object that you'd like to 
+convert into slices. To prevent weird behavior, your mesh must be manifold 
+(watertight). To find potentially problematic areas, go into edit mode, make
+sure no elements are selected, and do *Select* > *Non Manifold*. 
+
+![Example model](https://raw.githubusercontent.com/meshulam/sly/docs-assets/example1.png "Example model")
+
+
+### Loading a template script
+
+Open a text editor area. The easiest way to do this is to switch to the
+pre-defined *Scripting* layout in the dropdown at the top of the Blender
+window:
+
+![Layout dropdown selector](https://raw.githubusercontent.com/meshulam/sly/docs-assets/layout-selector.png)
+
+Click "New" in the text editor and paste in the contents of the example
+script, available at
+[example/starter.py](https://raw.githubusercontent.com/meshulam/sly/master/example/starter.py) 
+in this repo.
+
+
+### Modifying the script for your model
+
+The [starter script](https://raw.githubusercontent.com/meshulam/sly/master/example/starter.py) 
+has documentation for most of Sly's functionality. Modify
+the values or uncomment sections as desired. When you save your project, the
+script will be saved as part of the .blend file. You can also save it to an
+external file from *Text* > *Save As*.
+
+
+### Running the script
+
+In object mode, select just the one mesh object that you want Sly to work with.
+Then, in the script area, run the script from the right-click menu or the 
+"Text" menu at the bottom. 
+
+Ta-da! You just sliced your model!
+
+![Result of chair.blend](https://raw.githubusercontent.com/meshulam/sly/docs-assets/example2.png "Example model")
+
+In the sample script, each slice is added back into your Blender scene as a
+separate object. 
+
+![Exploded view of slices](https://raw.githubusercontent.com/meshulam/sly/docs-assets/example3.png)
+
+If configured, the script also exports an SVG file with the 2D slice shapes. 
+This SVG can then be imported into various CNC routing tools
+so you can cut out the shapes.
+
