@@ -1,6 +1,7 @@
 import bmesh
 from mathutils import Matrix
 from sly.ops import cut_poly
+from sly.utils import each_ring
 
 
 def to_bmesh(obj, solid=True):
@@ -10,7 +11,7 @@ def to_bmesh(obj, solid=True):
 
     bm = bmesh.new()
 
-    for ring in [poly.exterior] + poly.interiors[:]:
+    for ring in each_ring(poly):
         verts = []
         for pt in ring.coords[:-1]:
             verts.append(bm.verts.new((pt[0], pt[1], 0)))

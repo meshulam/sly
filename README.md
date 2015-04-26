@@ -50,7 +50,7 @@ convert into slices. To prevent weird behavior, your mesh must be manifold
 (watertight). To find potentially problematic areas, go into edit mode, make
 sure no elements are selected, and do *Select* > *Non Manifold*. 
 
-![Example model](docs/images/example1.png)
+![Example model](docs/images/example1.png "Example model")
 
 
 ### Loading a template script
@@ -59,17 +59,17 @@ Open a text editor area. The easiest way to do this is to switch to the
 pre-defined *Scripting* layout in the dropdown at the top of the Blender
 window:
 
-![Layout dropdown selector](docs/images/layout-selector.png)
+![Layout selector](docs/images/layout-selector.png "Layout dropdown selector")
 
 Click "New" in the text editor and paste in the contents of the example
 script, available at
-[example/starter.py](https://raw.githubusercontent.com/meshulam/sly/master/example/starter.py) 
+[example/starter.py](example/starter.py) 
 in this repo.
 
 
 ### Modifying the script for your model
 
-The [starter script](https://raw.githubusercontent.com/meshulam/sly/master/example/starter.py) 
+The [starter script](example/starter.py)
 has documentation for most of Sly's functionality. Modify
 the values or uncomment sections as desired. When you save your project, the
 script will be saved as part of the .blend file. You can also save it to an
@@ -84,12 +84,12 @@ Then, in the script area, run the script from the right-click menu or the
 
 Ta-da! You just sliced your model!
 
-![Result of chair.blend](docs/images/example2.png)
+![Result of chair.blend](docs/images/example2.png "Result of slicing chair.blend")
 
 In the sample script, each slice is added back into your Blender scene as a
 separate object. 
 
-![Exploded view of slices](docs/images/example3.png)
+![Exploded view of slices](docs/images/example3.png "Exploded view of slices")
 
 If configured, the script also exports an SVG file with the 2D slice shapes. 
 This SVG can then be imported into various CNC routing tools
