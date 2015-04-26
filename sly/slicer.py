@@ -61,7 +61,7 @@ class SliceDef(object):
         for i, poly in enumerate(sly.utils.each_shape(joined)):
             yield Slice(self.co, rot, poly,
                         self.thickness, z_index=self.z_index,
-                        name=self.identify(i))
+                        name=self.identify(i), fillet=self.fillet)
 
     def identify(self, sub_id=0):
         return "{}.{}".format(self.name, sub_id)
