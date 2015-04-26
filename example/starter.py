@@ -30,14 +30,15 @@ SVG_OUTFILE = '/path/to/output.svg'
 # to be 0.24 inches thick, enter 0.24 here.
 THICKNESS = 0.5
 
+
 # These variables are handy for specifying slice directions.
 X_DIR = (1, 0, 0)  # A plane with its face pointing in the X direction
-Y_DIR = (0, 1, 0)  # ...............................in the Y direction.
-Z_DIR = (0, 0, 1)  # ...............................in the Z direction.
+Y_DIR = (0, 1, 0)  # ... in the Y direction
+Z_DIR = (0, 0, 1)  # ... in the Z direction
 
 
-# A SliceDef specifies properties of the slices that you want created.
-# At the minimum, it must define the location of the slice plane.
+# A SliceDef is how you define the slices that you want created.
+# At a minimum, it must define the location of the slice plane.
 # Plane locations are expressed in "co, no" form: A COordinate that
 # lies on the plane, and the 3D NOrmal vector of the plane. Each of these
 # are expressed as (X, Y, Z) vectors.
@@ -69,11 +70,22 @@ bpy.context.object.hide = True
 # of the slices, in Blender units.
 slices = to_slices(mesh, slice_defs, THICKNESS)
 
+# to_slices has an additional optional argument:
+#
+# fillet_radius - Set to a positive number if you want the cutouts in your
+# slice to have dogbone fillets. If you're cutting out your design on a CNC
+# router, set this to the radius (half diameter) of the bit you're using. It
+# will make the slices fit together better since the bit will be able to cut
+# closer to the ideal square bottom.
+#
+# slices = to_slices(mesh, slice_defs, THICKNESS, fillet_radius=0.0625)
+
+
 # Create a page to draw our 2D slice shapes onto. The numbers are the width
 # and height of the output SVG, but we don't do any automatic placement. So
 # you'll still probably want to use a program like Illustrator or Inkscape
 # to position the slices.
-page = sly.plotter.Page(30, 30)
+page = sly.plotter.Page(10, 10)
 
 # Do this stuff for each slice that was created by to_slices
 for sli in slices:

@@ -12,13 +12,13 @@ from mathutils import Vector, Matrix
 Z_UNIT = Vector((0, 0, 1))
 
 
-def to_slices(bm, slice_defs, thickness=None, cut_specs=[]):
+def to_slices(bm, slice_defs, thickness, cut_specs=[], fillet_radius=0):
     slys = []
     for i, sdef in enumerate(slice_defs):
         if not sdef.name:
             sdef.name = str(i)
-        if thickness:
-            sdef.thickness = thickness
+        sdef.thickness = thickness
+        sdef.fillet = fillet_radius
         slys.extend(sdef.generate_slices(bm))
 
     for s1, s2 in itertools.combinations(slys, r=2):
@@ -32,14 +32,14 @@ def to_slices(bm, slice_defs, thickness=None, cut_specs=[]):
 
 
 class SliceDef(object):
-    def __init__(self, co, no, thickness=0.5, name="", z_index=0):
+    def __init__(self, co, no, name="", z_index=0):
         if not hasattr(co, 'length'):   # Support raw tuples or Vector objs
             co = Vector(co)
         if not hasattr(no, 'length'):
             no = Vector(no)
         self.co = co
         self.no = no
-        self.thickness = thickness
+        self.thickness = 0.5    # Default should be overridden in to_slices
         self.name = name
         self.z_index = z_index
 
@@ -70,7 +70,7 @@ class SliceDef(object):
 class Slice(object):
     """A 2D shape oriented in 3D space. The core object in the Sly library."""
 
-    def __init__(self, co, rot, poly, thickness, z_index=0, name=""):
+    def __init__(self, co, rot, poly, thickness, z_index=0, name="", fillet=0):
         self.co = co
         self.rot = rot
         self.poly = poly
@@ -78,7 +78,7 @@ class Slice(object):
         self.cuts = []
         self.z_index = z_index
         self.name = name
-        self.fillet = 0
+        self.fillet = fillet
 
     def to_2d(self, vec, translate=True):
         co = self.co if translate else None
