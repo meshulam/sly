@@ -21,7 +21,7 @@ import mathutils
 # On OSX this would probably look like
 #     "/Users/myuser/Documents/blabla.svg"
 # and on Windows something like
-#     "C:\Documents and Settings\myuser\Documents\blabla.svg"
+#     "C:\Users\myuser\Documents\blabla.svg"
 # Unix/Linux users shouldn't need any help with this :-)
 SVG_OUTFILE = '/path/to/output.svg'
 
