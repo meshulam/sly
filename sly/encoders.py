@@ -1,13 +1,13 @@
 import bmesh
 from mathutils import Matrix
-from sly.ops import cut_poly
+from sly.ops import render_poly
 from sly.utils import each_ring
 
 
 def to_bmesh(obj, solid=True):
     """Convert the slice to a bmesh positioned in 3-space. If solid is True,
     extrude the polygon to the proper thickness."""
-    poly = cut_poly(obj)
+    poly = render_poly(obj)
 
     bm = bmesh.new()
 

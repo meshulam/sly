@@ -2,9 +2,11 @@ import itertools
 import math
 import bmesh
 import shapely.geometry
-import sly.utils
 import shapely.ops
 from mathutils import Vector, Matrix
+
+import sly.utils
+from sly.features import Cut, Joint
 
 """The main module in Sly."""
 
@@ -76,6 +78,7 @@ class Slice(object):
         self.poly = poly
         self.thickness = thickness
         self.cuts = []
+        self.joints = []
         self.z_index = z_index
         self.name = name
         self.fillet = fillet
@@ -106,6 +109,11 @@ class Slice(object):
         d2.normalize()
         self.cuts.append(Cut(p2, d2, thickness))
 
+    def add_joint(self, start3d, end3d, *args, **kwargs):
+        start2d = self.to_2d(start3d)
+        end2d = self.to_2d(end3d)
+        self.joints.append(Joint(start2d, end2d, *args, **kwargs))
+
     def get_cut_shape(self, cut):
         ref = shapely.geometry.Point(cut.point.x, cut.point.y) \
                               .buffer(self.thickness / 2)
@@ -119,53 +127,6 @@ class Slice(object):
     @staticmethod
     def is_valid(obj):
         return hasattr(obj, 'poly') and hasattr(obj.poly, 'exterior')
-
-
-class Cut(object):
-    """A cutout from a slice. Perpendicular slices fit together by sliding
-    their cuts into each other"""
-    cut_dist = 1000     # Arbitrarily long cut
-
-    def __init__(self, point, direction, thickness):
-        self.point = point
-        self.direction = direction
-        self.thickness = thickness
-
-    def polygon(self, fillet=0):
-        offset = self.direction.orthogonal() * self.thickness / 2
-
-        p2 = self.point + self.direction * self.cut_dist
-        p1 = self.point
-
-        pts = [p1 - offset, p1 + offset,
-               p2 + offset, p2 - offset]
-        simple = shapely.geometry.Polygon(pts)
-
-        if fillet <= 0:
-            return simple
-
-        if fillet > self.thickness * 0.4:  # T-bone
-            w_inset = 0
-            h_inset = fillet
-        else:   # Dogbone
-            w_inset = fillet / math.sqrt(2)
-            h_inset = fillet / math.sqrt(2)
-        h0 = self.point + self.direction * h_inset
-        hole_w_off = self.direction.orthogonal() * (self.thickness / 2 - w_inset)
-        shapes = [shapely.geometry.Point(h0 + hole_w_off).buffer(fillet),
-                  shapely.geometry.Point(h0 - hole_w_off).buffer(fillet),
-                  simple]
-        return shapely.ops.unary_union(shapes)
-
-    def overlap_poly(self):
-        offset = self.direction.orthogonal() * self.thickness / 2
-
-        p2 = self.point + self.direction * self.cut_dist
-        p1 = self.point - self.direction * self.cut_dist
-
-        pts = [p1 - offset, p1 + offset,
-               p2 + offset, p2 - offset]
-        return shapely.geometry.Polygon(pts)
 
 
 def mesh_to_polys(bm, co, rot):

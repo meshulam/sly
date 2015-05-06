@@ -42,6 +42,22 @@ def mutual_cut(sli1, sli2, cut_spec={}):
         sli1.add_cut(midpt, cut_dir, sli2.thickness)
         sli2.add_cut(midpt, -cut_dir, sli1.thickness)
 
+def render_poly(sli):
+    cut = cut_poly(sli)
+    return joint_poly(cut, sli.joints)
+
+def joint_poly(poly, joints):
+    add_shapes = [poly]
+    remove_shapes = []
+    for joint in joints:
+        add_shapes.append(joint.polygons(positive=True))
+        remove_shapes.append(joint.polygons(positive=False))
+
+    added = shapely.ops.cascaded_union(add_shapes)
+    removed = shapely.ops.cascaded_union(remove_shapes) \
+                     .buffer(0.0001, cap_style=3)
+                     # To make sure we cut through the piece
+    return biggest_polygon(added.difference(removed))
 
 def cut_poly(sli, cutouts_only=False):
     """Apply a slice's cuts to the polygon. If cutouts_only is True,
