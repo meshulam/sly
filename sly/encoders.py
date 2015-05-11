@@ -4,7 +4,7 @@ from sly.ops import render_poly
 from sly.utils import each_ring
 
 
-def to_bmesh(obj, solid=True):
+def to_bmesh(obj, solid=True, fill=True):
     """Convert the slice to a bmesh positioned in 3-space. If solid is True,
     extrude the polygon to the proper thickness."""
     poly = render_poly(obj)
@@ -19,8 +19,10 @@ def to_bmesh(obj, solid=True):
                 bm.edges.new(verts[-2:])
         bm.edges.new((verts[-1], verts[0]))  # Close the loop
 
-    bmesh.ops.triangle_fill(bm, edges=bm.edges[:],
-                            use_dissolve=True)
+    if fill:
+        bmesh.ops.triangle_fill(bm, edges=bm.edges[:],
+                                use_dissolve=True,
+                                normal=(0.0, 0.0, 1.0))
 
     if solid:
         bm.transform(Matrix.Translation((0, 0, -obj.thickness / 2)))

@@ -54,9 +54,8 @@ def joint_poly(poly, joints):
         remove_shapes.append(joint.polygons(positive=False))
 
     added = shapely.ops.cascaded_union(add_shapes)
-    removed = shapely.ops.cascaded_union(remove_shapes) \
-                     .buffer(0.0001, cap_style=3)
-                     # To make sure we cut through the piece
+    removed = shapely.ops.cascaded_union(remove_shapes)
+
     return biggest_polygon(added.difference(removed))
 
 def cut_poly(sli, cutouts_only=False):
