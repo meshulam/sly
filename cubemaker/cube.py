@@ -37,7 +37,7 @@ FACE_TOP = 5
 
 
 class Cube(object):
-    def __init__(self, dims, thickness, tooth_width=None, tooth_slop=None):
+    def __init__(self, dims, thickness, tooth_width=None, tooth_slop=0.02):
         (self.width, self.length, self.height) = dims
         self.thickness = thickness
 
@@ -46,10 +46,7 @@ class Cube(object):
         else:
             self.tooth_width = self.thickness * 2
 
-        if tooth_slop:
-            self.tooth_slop = tooth_slop
-        else:
-            self.tooth_slop = thickness * 0.08
+        self.tooth_slop = tooth_slop
 
     def gen_faces(self):
         return [self.get_face(i) for i in range(5)]
